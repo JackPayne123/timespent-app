@@ -693,14 +693,15 @@ button:disabled {
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    justify-content: center; /* Center the buttons horizontally */
 }
 
-.preset-tags-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-right: 4px;
-    font-weight: 500;
-}
+/* .preset-tags-label {  <-- No longer needed */
+/*    font-size: 0.85rem; */
+/*    color: var(--text-secondary); */
+/*    margin-right: 4px; */
+/*    font-weight: 500; */
+/* } */
 
 button.preset-tag-btn {
     padding: 4px 10px;
@@ -777,4 +778,32 @@ button.preset-tag-btn:hover {
     font-size: 0.9rem;
     text-align: center;
     padding: 10px 0;
+} 
+
+/* --- History Item Delete Button --- */
+.history-item {
+    position: relative; /* Needed for absolute positioning of the button */
+    padding-right: 35px; /* Add padding to prevent content overlap */
+}
+
+.delete-history-item-btn {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--medium-gray); /* Subtle initial color */
+    font-size: 1.5rem; /* Make the '×' larger */
+    font-weight: 300; /* Lighter weight for the cross */
+    line-height: 1;
+    padding: 2px 5px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    box-shadow: none; /* Override general button styles */
+}
+
+.delete-history-item-btn:hover {
+    color: var(--danger-color); /* Red on hover */
+    background-color: transparent; /* Ensure no background on hover */
 } 

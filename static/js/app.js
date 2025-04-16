@@ -386,16 +386,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
 
-        today.setHours(0, 0, 0, 0);
-        yesterday.setHours(0, 0, 0, 0);
-        date.setHours(0, 0, 0, 0);
+        // Work on copies to avoid mutating the original date object
+        const dateCopy = new Date(date);
+        const todayCopy = new Date(today);
+        const yesterdayCopy = new Date(yesterday);
 
-        if (date.getTime() === today.getTime()) {
+        todayCopy.setHours(0, 0, 0, 0);
+        yesterdayCopy.setHours(0, 0, 0, 0);
+        dateCopy.setHours(0, 0, 0, 0);
+
+        // Compare using the modified copies
+        if (dateCopy.getTime() === todayCopy.getTime()) {
             return 'Today';
         }
-        if (date.getTime() === yesterday.getTime()) {
+        if (dateCopy.getTime() === yesterdayCopy.getTime()) {
             return 'Yesterday';
         }
+        // Return formatted original date (or copy, doesn't matter here)
         return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
@@ -474,13 +481,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("Missing start_time for history entry:", entry);
                 return; // Skip entry if no start_time
             }
+            // Attempt to parse end_time, handle if missing or invalid
+            // --- Remove Logging --- 
+            // console.log(`[renderHistory] Entry ID: ${entry.id}, Raw start_time: ${entry.start_time}`); 
             const startDateObj = new Date(entry.start_time);
             if (isNaN(startDateObj.getTime())) {
-                console.error("Invalid start_time encountered in history:", entry.start_time, entry);
+                // console.error("[renderHistory] Invalid start_time after parsing:", entry.start_time, entry);
                 return; // Skip this iteration
             }
+            // console.log(`[renderHistory] Parsed startDateObj: ${startDateObj.toISOString()}`);
+            // --- End Logging ---
             
-            // Attempt to parse end_time, handle if missing or invalid
             let endDateObj = null;
             let endTimeString = '';
             if (entry.end_time) {
@@ -509,7 +520,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Render the history item itself 
             // Use startDateObj for formatting the start time
-            const startTimeString = startDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // --- Remove Logging around formatting --- 
+            // console.log(`[renderHistory Formatting] Before toLocaleTimeString for ID ${entry.id}:`, startDateObj);
+            const startTimeString = startDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); // Explicitly use 24-hour format
+            // console.log(`[renderHistory Formatting] After toLocaleTimeString for ID ${entry.id}: startTimeString = "${startTimeString}"`);
+            // --- End Logging ---
             const dateString = startDateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); 
             
             // Construct time display: Start - End or just Start if end is missing/invalid
@@ -534,7 +549,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="duration-time">${entry.duration} min · ${dateString}, ${timeDisplay}</span>
                     </div>
                 </div>
-            `;
+                <button class="delete-history-item-btn" title="Delete entry">×</button> 
+            `; // Added delete button
+            
+            // Add event listener for the new delete button
+            const deleteButton = historyElement.querySelector('.delete-history-item-btn');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent potential clicks on parent elements
+                    if (confirm('Are you sure you want to delete this history entry?')) {
+                        deleteHistoryEntryFromBackend(entry.id);
+                    }
+                });
+            }
+
             historyElement.querySelectorAll('.filterable-tag').forEach(tagEl => {
                 tagEl.addEventListener('click', (e) => {
                     e.stopPropagation(); 
@@ -615,31 +643,51 @@ document.addEventListener('DOMContentLoaded', function() {
         // 3. Render buttons
         elements.presetTagsContainer.innerHTML = ''; // Clear previous
         if (sortedTags.length > 0) {
-             elements.presetTagsContainer.innerHTML = '<span class="preset-tags-label">Quick Tags:</span>'; // Add a label
              sortedTags.forEach(tag => {
                 const button = document.createElement('button');
                 button.textContent = `#${tag}`;
                 button.classList.add('preset-tag-btn');
                 button.dataset.tag = tag;
-                button.addEventListener('click', () => addTagToDescription(tag));
+                button.addEventListener('click', () => toggleTagInDescription(tag));
                 elements.presetTagsContainer.appendChild(button);
             });
         }
     }
 
-    // NEW: Add selected preset tag to description input
-    function addTagToDescription(tag) {
+    // MODIFIED: Toggle selected preset tag in description input
+    function toggleTagInDescription(tag) {
         const input = elements.sessionDescriptionInput;
-        const currentValue = input.value;
-        const tagText = `#${tag}`;
+        let currentValue = input.value;
+        const tagText = `#${tag}`; 
+        
+        // Check if the exact tag exists, surrounded by spaces or at start/end of string
+        // Case-insensitive check
+        const checkRegex = new RegExp(`(^|\s)${tagText}(\s|$)`, 'i');
 
-        // Prevent adding if already present
-        if (!currentValue.includes(tagText)) {
-            // Add a space before the tag if input is not empty and doesn't end with space
+        if (checkRegex.test(currentValue)) {
+            // Tag exists. Remove all occurrences (case-insensitive, global).
+            // Match the tag, making sure it's bounded by spaces or start/end.
+            const removeRegex = new RegExp(`(^|\s)${tagText}(\s|$)`, 'gi');
+            
+            // Replace the match. If tag was surrounded by spaces, replace with a single space.
+            // If tag was at start/end with one space, replace with empty string (handled by trim).
+            let newValue = currentValue.replace(removeRegex, (match, p1, p2) => {
+                // p1 is the space before (or empty), p2 is the space after (or empty)
+                // If both spaces exist, keep one space. Otherwise, remove entirely.
+                return (p1 && p2) ? ' ' : ''; 
+            });
+            
+            // Clean up any potential resulting double spaces and trim start/end.
+            newValue = newValue.replace(/\s{2,}/g, ' ').trim(); 
+            input.value = newValue;
+
+        } else {
+            // Tag doesn't exist, add it
             const prefix = (currentValue.length > 0 && !currentValue.endsWith(' ')) ? ' ' : '';
-            input.value += prefix + tagText + ' '; // Add space after tag too
-            input.focus(); // Focus for convenience
+            // Add the tag followed by a space
+            input.value += prefix + tagText + ' '; 
         }
+        input.focus(); // Focus for convenience
     }
     
     // NEW: Render Day Tracking View
@@ -697,13 +745,31 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                console.error('Failed to save history to backend:', response.statusText);
+                // Try to parse error details
+                response.json().then(err => {
+                     console.error('Failed to save history to backend:', response.statusText, err);
+                }).catch(() => {
+                    console.error('Failed to save history to backend:', response.statusText, '(No JSON body)');
+                });
+                 // Potentially throw an error here or handle it depending on desired behavior
+                 // throw new Error(`HTTP error! status: ${response.status}`); 
             }
-            return response.json();
+            return response.json(); // May error if response wasn't ok and not JSON
         })
         .then(savedEntry => {
             console.log('History saved:', savedEntry);
             // Optionally update local entry ID with backend ID if needed
+            // Find the local entry and update its ID
+             const localEntryIndex = state.history.findIndex(item => item.id === entry.id); // Use the original local ID passed in
+            if (localEntryIndex !== -1 && savedEntry && savedEntry.id) {
+                state.history[localEntryIndex].id = savedEntry.id; // Update the ID
+                console.log(`Updated local entry ${entry.id} to backend ID ${savedEntry.id}`);
+                saveHistoryToLocalStorage(); // Save the updated ID
+                // Re-render might be needed if ID is displayed or used elsewhere immediately
+                // renderHistory(); 
+            } else if (!savedEntry || !savedEntry.id) {
+                console.warn('Backend did not return a valid saved entry with ID.');
+            }
         })
         .catch(error => {
             console.error('Error saving history to backend:', error);
@@ -869,12 +935,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveCurrentSessionToHistory(durationMinutes) {
         const description = state.currentSessionDescription;
         const tags = state.currentSessionTags;
-        const startTime = new Date(Date.now() - durationMinutes * 60 * 1000).toISOString(); // Estimate start time
-        const endTime = new Date().toISOString(); // Capture end time *now*
+        const now = new Date();
+        const endTime = now.toISOString(); // Capture end time *now*
+        const startTime = new Date(now.getTime() - durationMinutes * 60 * 1000).toISOString(); // Estimate start time based on end time
 
         if (description && durationMinutes > 0) {
-            const historyEntry = {
-                id: `local_${Date.now()}`, // Keep local ID until backend confirms
+             const localId = `local_${Date.now()}`; // Generate local ID
+             const historyEntry = {
+                id: localId, // Use local ID initially
                 description: description,
                 tags: tags,
                 duration: durationMinutes,
@@ -884,7 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Prepend to local state immediately for responsiveness
             state.history.unshift(historyEntry); 
             
-            // Save to backend (backend should ideally return the final entry with DB ID and accurate times)
+            // Save to backend (passing the *intended* data including local ID for potential reference)
             saveHistoryToBackend(historyEntry); 
             
             // Update local storage
@@ -910,6 +978,61 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             alert(notificationMessage);
         }
+    }
+
+    // NEW: Function to delete a specific history entry
+    function deleteHistoryEntryFromBackend(entryId) {
+        // Prevent deleting local_ entries that haven't been confirmed by backend yet?
+        // Could check if entryId is numeric string or starts with 'local_'
+        if (typeof entryId === 'string' && entryId.startsWith('local_')) {
+            console.warn('Attempted to delete an entry not yet confirmed by backend.');
+            // Optionally allow deletion or show a message
+            // return; 
+        }
+        
+        console.log(`Attempting to delete history entry ID: ${entryId}`);
+        
+        fetch(`/api/history/${entryId}`, { 
+            method: 'DELETE' 
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Try to get error details from response body
+                return response.json().then(err => { 
+                    throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                }).catch(() => {
+                    // Fallback if no JSON error message
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                });
+            }
+            return response.json(); // Expecting { message: "..." } on success
+        })
+        .then(data => {
+            console.log("Delete successful on backend:", data.message);
+            
+            // Find the index of the item to remove in local state
+            // Ensure type consistency for comparison (e.g., if entryId is number, state IDs might be too)
+            const idToDelete = Number.isInteger(entryId) ? entryId : String(entryId);
+            const indexToRemove = state.history.findIndex(item => item.id === idToDelete);
+            
+            if (indexToRemove > -1) {
+                // Remove item from local state
+                state.history.splice(indexToRemove, 1);
+                // Update local storage
+                saveHistoryToLocalStorage();
+                // Re-render the history section to reflect the change
+                renderHistory(); 
+                console.log(`Entry ${entryId} removed from local state and UI updated.`);
+            } else {
+                console.warn(`Entry ${entryId} not found in local state after successful deletion.`);
+                 // Still re-render in case of discrepancy
+                renderHistory();
+            }
+        })
+        .catch(error => {
+            console.error(`Error deleting history entry ID ${entryId}:`, error);
+            alert(`Failed to delete entry: ${error.message}`);
+        });
     }
 
     // Initialize the app

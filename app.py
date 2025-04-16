@@ -150,6 +150,34 @@ def delete_all_history():
         print(f"Error deleting history: {e}")
         return jsonify({'error': 'Failed to delete history'}), 500
 
+# API Endpoint to delete a SPECIFIC history entry by ID
+@app.route('/api/history/<int:entry_id>', methods=['DELETE'])
+def delete_specific_history_entry(entry_id):
+    if not entry_id:
+        return jsonify({'error': 'Missing entry ID'}), 400
+    
+    try:
+        # Attempt to delete the specific entry by its ID
+        response = supabase.table('history').delete().eq('id', entry_id).execute()
+        
+        # Check if any data was returned/affected (might depend on Supabase client version/settings)
+        # A successful delete might return an empty data list or specific confirmation.
+        # For simplicity, we'll assume success if no exception is raised and potentially check affected rows if available.
+        # Supabase python client `delete` might not return the deleted data, 
+        # and `count` might not be directly in the response object in v1/v2? Checking is tricky.
+        # Let's rely on the fact that if `eq('id', entry_id)` doesn't find a match, 
+        # it shouldn't error, but also won't delete anything. We assume frontend provides valid IDs.
+        
+        print(f"Delete response for ID {entry_id}: {response}") # Log response for debugging
+
+        # If the deletion was technically successful (no error) even if 0 rows affected
+        # (e.g., ID didn't exist), return success. The frontend state handles the actual list.
+        return jsonify({'message': f'Attempted deletion for entry ID {entry_id}.'}), 200
+        
+    except Exception as e:
+        print(f"Error deleting history entry ID {entry_id}: {e}")
+        # Be more specific if possible (e.g., distinguish not found vs. server error)
+        return jsonify({'error': f'Failed to delete history entry ID {entry_id}'}), 500
 
 # API Endpoint to filter history entries by tag from Supabase
 # Note: This route is likely redundant now as filtering is done client-side
