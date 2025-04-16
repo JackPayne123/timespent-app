@@ -57,17 +57,22 @@ def serve_root_file(filename):
 @app.route('/api/history', methods=['GET'])
 def get_history():
     try:
-        response = supabase.table('history').select("*").order('created_at', desc=True).execute()
-        
-        # Convert comma-separated tags back to list for frontend
+        # Select all columns including the new start_time and end_time
+        # Order by start_time descending (or created_at if you prefer)
+        response = supabase.table('history').select("*").order('start_time', desc=True).execute()
+
+        # Convert comma-separated tags back to list and ensure times are included
         data = []
         for entry in response.data:
             if entry.get('tags') and isinstance(entry['tags'], str):
                 entry['tags'] = entry['tags'].split(',')
             elif not entry.get('tags'): # Handle potential null tags
                 entry['tags'] = []
+            # Ensure start_time and end_time are present (even if null)
+            entry['start_time'] = entry.get('start_time')
+            entry['end_time'] = entry.get('end_time')
             data.append(entry)
-            
+
         return jsonify(data)
     except Exception as e:
         print(f"Error fetching history: {e}")
@@ -80,30 +85,47 @@ def add_history_entry():
     description = data.get('description')
     duration = data.get('duration')
     # Tags are expected as a comma-separated string from JS
-    tags_string = data.get('tags') 
+    tags_string = data.get('tags')
+    # Get start_time and end_time from the request
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
 
-    if not description or duration is None:
-        return jsonify({'error': 'Missing description or duration'}), 400
+    # Basic validation
+    if not description or duration is None or not start_time or not end_time:
+        # end_time can be null if timer completes naturally, but we expect it from JS now
+        # let's require all for now based on JS implementation
+        missing_fields = []
+        if not description: missing_fields.append('description')
+        if duration is None: missing_fields.append('duration')
+        if not start_time: missing_fields.append('start_time')
+        if not end_time: missing_fields.append('end_time') # If allowing null end_time, remove this check
+        return jsonify({'error': f'Missing fields: {", ".join(missing_fields)}'}), 400
 
     try:
-        # Insert data into Supabase 'history' table
-        response = supabase.table('history').insert({
+        # Insert data including start_time and end_time into Supabase 'history' table
+        insert_data = {
             'description': description,
             'duration': duration,
-            'tags': tags_string if tags_string else None
-        }).execute()
-        
+            'tags': tags_string if tags_string else None,
+            'start_time': start_time, # Assumes JS sends ISO 8601 string
+            'end_time': end_time       # Assumes JS sends ISO 8601 string
+        }
+        response = supabase.table('history').insert(insert_data).execute()
+
         if len(response.data) > 0:
-             # Convert tags back to list before sending response
+             # Convert tags back to list and include times before sending response
             new_entry = response.data[0]
             if new_entry.get('tags') and isinstance(new_entry['tags'], str):
                 new_entry['tags'] = new_entry['tags'].split(',')
             elif not new_entry.get('tags'):
                 new_entry['tags'] = []
+            # Ensure times are included in the response
+            new_entry['start_time'] = new_entry.get('start_time')
+            new_entry['end_time'] = new_entry.get('end_time')
             return jsonify(new_entry), 201
         else:
              raise Exception("Insert operation returned no data")
-            
+
     except Exception as e:
         print(f"Error adding history: {e}")
         return jsonify({'error': 'Failed to add history entry'}), 500
@@ -130,26 +152,34 @@ def delete_all_history():
 
 
 # API Endpoint to filter history entries by tag from Supabase
+# Note: This route is likely redundant now as filtering is done client-side
+# You might consider removing it unless you want server-side tag filtering.
+# If keeping, it should also select and return start_time/end_time.
 @app.route('/api/history/filter', methods=['GET'])
 def filter_history():
     tag_query = request.args.get('tag')
     try:
-        query = supabase.table('history').select("*").order('created_at', desc=True)
+        # Update query to select all fields and order by start_time
+        query = supabase.table('history').select("*").order('start_time', desc=True)
         if tag_query:
             # Use Supabase `like` or `ilike` for case-insensitive search on the tags string
-            query = query.like('tags', f'%{tag_query}%') 
-        
+            # Adjust based on how tags are stored if they are an array type in PG
+            query = query.like('tags', f'%{tag_query}%') # Assumes comma-separated string
+
         response = query.execute()
-        
-        # Convert tags to list
+
+        # Convert tags to list and include times
         data = []
         for entry in response.data:
             if entry.get('tags') and isinstance(entry['tags'], str):
                 entry['tags'] = entry['tags'].split(',')
             elif not entry.get('tags'):
                 entry['tags'] = []
+            # Ensure start_time and end_time are present
+            entry['start_time'] = entry.get('start_time')
+            entry['end_time'] = entry.get('end_time')
             data.append(entry)
-            
+
         return jsonify(data)
     except Exception as e:
         print(f"Error filtering history: {e}")

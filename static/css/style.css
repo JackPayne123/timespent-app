@@ -684,4 +684,97 @@ button:disabled {
 
 .history-list {
     /* ... existing styles ... */
+}
+
+/* --- Preset Tags Styling --- */
+.preset-tags-container {
+    margin-top: 12px; /* Space above the tags */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.preset-tags-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-right: 4px;
+    font-weight: 500;
+}
+
+button.preset-tag-btn {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    border: 1px solid var(--medium-gray);
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: none; /* Override default button styles */
+}
+
+button.preset-tag-btn:hover {
+    border-color: var(--primary-color);
+    background-color: #FFF7ED; /* Light orange background */
+    color: var(--primary-hover);
+}
+
+
+/* --- Day Tracking View Styling --- */
+.day-tracking-view {
+    margin-top: 20px; /* Space above this view */
+    padding-top: 20px; /* Space below metrics/header */
+    border-top: 1px dashed var(--light-gray); /* Subtle separator */
+    width: 100%;
+}
+
+.view-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.daily-totals-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px; /* Limit height and make scrollable */
+    overflow-y: auto; /* Add scroll if content exceeds max-height */
+}
+
+.daily-totals-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--subtle-bg); /* Very light line between days */
+}
+
+.daily-totals-list li:last-child {
+    border-bottom: none;
+}
+
+.daily-totals-list .date {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.daily-totals-list .time {
+    color: var(--text-color);
+    font-weight: 600;
+    background-color: var(--subtle-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.day-tracking-view .no-data {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 10px 0;
 } 

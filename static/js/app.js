@@ -50,7 +50,9 @@ document.addEventListener('DOMContentLoaded', function() {
         clearHistoryButton: document.getElementById('clear-history-btn'), // Added clear button element
         historyMetricsContainer: document.getElementById('history-metrics'), // Added metrics container
         volumeSettingsButton: document.getElementById('volume-settings-btn'), // Cog button
-        volumeSlider: document.getElementById('volume-slider') // Slider input
+        volumeSlider: document.getElementById('volume-slider'), // Slider input
+        presetTagsContainer: document.getElementById('preset-tags-container'), // For preset tag buttons
+        dayTrackingViewContainer: document.getElementById('day-tracking-view') // For daily summary view
     };
 
     // --- Worker Message Handling ---
@@ -285,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saveCurrentSessionToHistory(elapsedDuration);
 
         // Reset UI immediately (worker will also send 'stopped')
+        const resetTime = new Date(); // Capture time *before* resetting state
         state.isTimerActive = false;
         state.isTimerPaused = false;
         enableInputs();
@@ -297,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state.currentSessionDescription = '';
         state.currentSessionTags = [];
         elements.sessionDescriptionInput.value = '';
+        // Note: saveCurrentSessionToHistory was called *before* this UI reset
     }
 
     // Modified internalReset to remove flashing logic
@@ -406,76 +410,114 @@ document.addEventListener('DOMContentLoaded', function() {
             ? state.history.filter(entry => entry.tags && entry.tags.includes(state.activeFilterTag))
             : state.history; 
 
-        // 3. Calculate Metrics for Today
+        // 3. Calculate Metrics for Today based on FILTERED history
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         let totalTimeToday = 0;
         let sessionsToday = 0;
+        const todayStartTime = today.getTime(); // Get timestamp once
 
-        state.history.forEach(entry => {
-            // Use created_at for metrics calculation
-            const entryDate = new Date(entry.created_at); 
+        // Use filteredHistory for metrics calculation
+        filteredHistory.forEach(entry => {
+            // Use start_time for metrics calculation and ensure it's valid
+            if (!entry.start_time) return; // Skip if no start_time
+            const entryDate = new Date(entry.start_time); 
+            if (isNaN(entryDate.getTime())) return; // Skip if invalid date
+            
             entryDate.setHours(0, 0, 0, 0);
-            if (!isNaN(entryDate.getTime()) && entryDate.getTime() === today.getTime()) { // Check date validity here too
+            if (entryDate.getTime() === todayStartTime) { 
                 totalTimeToday += entry.duration;
                 sessionsToday++;
             }
         });
-
-        // 4. Render Metrics
+        
+        // 4. Render Metrics - Update labels if filtered
+        const filterSuffix = state.activeFilterTag ? ` (#${state.activeFilterTag})` : '';
         elements.historyMetricsContainer.innerHTML = `
             <div class="metric-item">
                 <span class="metric-value">${sessionsToday}</span>
-                <span class="metric-label">Sessions Today</span>
+                <span class="metric-label">Sessions Today${filterSuffix}</span>
             </div>
             <div class="metric-item">
                 <span class="metric-value">${totalTimeToday} min</span>
-                <span class="metric-label">Total Time Today</span>
+                <span class="metric-label">Total Time Today${filterSuffix}</span>
             </div>
         `;
 
-        // 5. Group Filtered History by Day and Render
+        // 5. Group Filtered History by Day and Render List
         elements.historyList.innerHTML = ''; // Clear previous list
         if (filteredHistory.length === 0) {
             const message = state.activeFilterTag 
                 ? `No sessions found with tag #${state.activeFilterTag}.`
                 : 'No completed sessions yet.';
             elements.historyList.innerHTML = `<div class="no-tasks">${message}</div>`;
-            return;
+            // Still render day tracking and preset tags even if history list is empty
+            renderDayTrackingView(filteredHistory); // Pass filtered history
+            renderPresetTags(); 
+            return; 
         }
 
-        // Use created_at for sorting
-        const sortedHistory = [...filteredHistory].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // Use start_time for sorting
+        const sortedHistory = [...filteredHistory].sort((a, b) => {
+             // Handle potential missing or invalid dates during sort
+            const dateA = a.start_time ? new Date(a.start_time) : null;
+            const dateB = b.start_time ? new Date(b.start_time) : null;
+            if (!dateA || isNaN(dateA.getTime())) return 1; // Push invalid dates down
+            if (!dateB || isNaN(dateB.getTime())) return -1;
+            return dateB - dateA; // Sort descending
+        });
         
         let currentDay = null;
         sortedHistory.forEach(entry => {
-            // --- Robust Date Parsing using created_at --- 
-            const entryDateObj = new Date(entry.created_at);
-            if (isNaN(entryDateObj.getTime())) {
-                console.error("Invalid date encountered in history:", entry.created_at, entry);
+            // --- Robust Date Parsing using start_time --- 
+            if (!entry.start_time) {
+                console.error("Missing start_time for history entry:", entry);
+                return; // Skip entry if no start_time
+            }
+            const startDateObj = new Date(entry.start_time);
+            if (isNaN(startDateObj.getTime())) {
+                console.error("Invalid start_time encountered in history:", entry.start_time, entry);
                 return; // Skip this iteration
             }
-            // --- Use entryDateObj for all date operations below --- 
+            
+            // Attempt to parse end_time, handle if missing or invalid
+            let endDateObj = null;
+            let endTimeString = '';
+            if (entry.end_time) {
+                endDateObj = new Date(entry.end_time);
+                if (!isNaN(endDateObj.getTime())) {
+                     endTimeString = endDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    console.warn("Invalid end_time encountered for entry:", entry.id, entry.end_time);
+                    endDateObj = null; // Treat as invalid
+                }
+            } else {
+                 console.warn("Missing end_time for entry:", entry.id);
+            }
+            // --- Use startDateObj for date operations below --- 
 
-            const entryDay = entryDateObj.toDateString(); // Use simple date string for comparison
+            const entryDay = startDateObj.toDateString(); // Use simple date string for comparison
 
             // Check if day changed, insert header if needed
             if (entryDay !== currentDay) {
                 currentDay = entryDay;
                 const dateHeader = document.createElement('div');
                 dateHeader.classList.add('history-date-header');
-                dateHeader.textContent = formatDateHeader(entryDateObj); // Use parsed date object
+                dateHeader.textContent = formatDateHeader(startDateObj); // Use parsed date object
                 elements.historyList.appendChild(dateHeader);
             }
 
             // Render the history item itself 
-            // Use entryDateObj for formatting
-            const formattedDate = entryDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
-                                  ' ' + entryDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); 
+            // Use startDateObj for formatting the start time
+            const startTimeString = startDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateString = startDateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); 
+            
+            // Construct time display: Start - End or just Start if end is missing/invalid
+            const timeDisplay = endTimeString ? `${startTimeString} - ${endTimeString}` : startTimeString;
             
             const historyElement = document.createElement('div');
             historyElement.classList.add('history-item');
-            historyElement.dataset.id = entry.id;
+            historyElement.dataset.id = entry.id; // Assuming backend provides a unique ID
             const safeDescription = document.createElement('div');
             safeDescription.textContent = entry.description;
             let tagsHTML = '';
@@ -489,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="task-description">${safeDescription.innerHTML}</div>
                     <div class="task-meta">
                         ${tagsHTML}
-                        <span class="duration-time">${entry.duration} min · ${formattedDate}</span>
+                        <span class="duration-time">${entry.duration} min · ${dateString}, ${timeDisplay}</span>
                     </div>
                 </div>
             `;
@@ -501,6 +543,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             elements.historyList.appendChild(historyElement);
         });
+
+        // 6. Render Day Tracking View (using filtered history)
+        renderDayTrackingView(filteredHistory);
+
+        // 7. Render Preset Tags (based on full history)
+        renderPresetTags();
     }
 
     function renderFilterTags() {
@@ -544,6 +592,94 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHistory(); // Re-render the history list with the filter applied
     }
 
+    // NEW: Render the top 4 preset tags
+    function renderPresetTags() {
+        if (!elements.presetTagsContainer) return;
+
+        // 1. Calculate tag frequencies from *all* history
+        const tagCounts = {};
+        state.history.forEach(entry => {
+            if (entry.tags) {
+                entry.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            }
+        });
+
+        // 2. Get top 4 tags
+        const sortedTags = Object.entries(tagCounts)
+            .sort(([, countA], [, countB]) => countB - countA) // Sort by count descending
+            .map(([tag]) => tag) // Get just the tag names
+            .slice(0, 4); // Take top 4
+
+        // 3. Render buttons
+        elements.presetTagsContainer.innerHTML = ''; // Clear previous
+        if (sortedTags.length > 0) {
+             elements.presetTagsContainer.innerHTML = '<span class="preset-tags-label">Quick Tags:</span>'; // Add a label
+             sortedTags.forEach(tag => {
+                const button = document.createElement('button');
+                button.textContent = `#${tag}`;
+                button.classList.add('preset-tag-btn');
+                button.dataset.tag = tag;
+                button.addEventListener('click', () => addTagToDescription(tag));
+                elements.presetTagsContainer.appendChild(button);
+            });
+        }
+    }
+
+    // NEW: Add selected preset tag to description input
+    function addTagToDescription(tag) {
+        const input = elements.sessionDescriptionInput;
+        const currentValue = input.value;
+        const tagText = `#${tag}`;
+
+        // Prevent adding if already present
+        if (!currentValue.includes(tagText)) {
+            // Add a space before the tag if input is not empty and doesn't end with space
+            const prefix = (currentValue.length > 0 && !currentValue.endsWith(' ')) ? ' ' : '';
+            input.value += prefix + tagText + ' '; // Add space after tag too
+            input.focus(); // Focus for convenience
+        }
+    }
+    
+    // NEW: Render Day Tracking View
+    function renderDayTrackingView(historyData) { // Accepts history data (can be filtered)
+        if (!elements.dayTrackingViewContainer) return;
+
+        const dailyTotals = {}; // { 'YYYY-MM-DD': totalMinutes }
+
+        historyData.forEach(entry => {
+             if (!entry.start_time || !entry.duration) return; // Need start_time and duration
+
+             const startDate = new Date(entry.start_time);
+             if (isNaN(startDate.getTime())) return; // Skip invalid dates
+
+             const dayKey = startDate.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
+
+             dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + entry.duration;
+        });
+
+        // Sort days chronologically
+        const sortedDays = Object.entries(dailyTotals).sort(([dayA], [dayB]) => dayA.localeCompare(dayB));
+
+        // Generate HTML (simple list for now)
+        let html = '<h3 class="view-title">Daily Totals</h3>';
+        if (sortedDays.length === 0) {
+            html += '<p class="no-data">No activity recorded for the selected filter.</p>';
+        } else {
+            html += '<ul class="daily-totals-list">';
+            sortedDays.forEach(([day, totalMinutes]) => {
+                 // Format date nicely for display
+                const dateObj = new Date(day + 'T00:00:00'); // Ensure correct local timezone interpretation
+                const displayDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                html += `<li><span class="date">${displayDate}:</span> <span class="time">${totalMinutes} min</span></li>`;
+            });
+            html += '</ul>';
+        }
+
+        elements.dayTrackingViewContainer.innerHTML = html;
+    }
+
     // Backend Interaction
     function saveHistoryToBackend(entry) {
         fetch('/api/history', { // Changed endpoint to /api/history
@@ -554,7 +690,9 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 description: entry.description,
                 duration: entry.duration,
-                tags: entry.tags.join(',') // Send tags as comma-separated string
+                tags: entry.tags.join(','), // Send tags as comma-separated string
+                start_time: entry.start_time, // Send start_time
+                end_time: entry.end_time      // Send end_time
             })
         })
         .then(response => {
@@ -580,9 +718,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                state.history = data.map(item => ({ ...item, tags: item.tags || [] }));
+                // Ensure tags is always an array and handle start/end times
+                state.history = data.map(item => ({ 
+                    ...item, 
+                    tags: item.tags || [],
+                    // Assume backend returns ISO strings for start_time and end_time
+                    start_time: item.start_time, 
+                    end_time: item.end_time 
+                }));
                 saveHistoryToLocalStorage(); // Sync local storage
-                renderHistory(); // <<< Render AFTER data is loaded and processed
+                renderHistory(); // Render AFTER data is loaded and processed
             })
             .catch(error => {
                 console.error('Error loading history from backend:', error);
@@ -604,9 +749,11 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const historyData = localStorage.getItem('timeSpent_history');
             if (historyData) {
-                 state.history = JSON.parse(historyData).map(item => ({
+                state.history = JSON.parse(historyData).map(item => ({
                      ...item,
-                     tags: item.tags || [] // Ensure tags is an array on load
+                     tags: item.tags || [], // Ensure tags is an array on load
+                     start_time: item.start_time, // Load start_time
+                     end_time: item.end_time      // Load end_time
                  }));
             } else {
                 state.history = [];
@@ -722,19 +869,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveCurrentSessionToHistory(durationMinutes) {
         const description = state.currentSessionDescription;
         const tags = state.currentSessionTags;
+        const startTime = new Date(Date.now() - durationMinutes * 60 * 1000).toISOString(); // Estimate start time
+        const endTime = new Date().toISOString(); // Capture end time *now*
 
         if (description && durationMinutes > 0) {
             const historyEntry = {
-                id: `local_${Date.now()}`,
+                id: `local_${Date.now()}`, // Keep local ID until backend confirms
                 description: description,
                 tags: tags,
                 duration: durationMinutes,
-                created_at: new Date().toISOString()
+                start_time: startTime, // Use estimated start time
+                end_time: endTime       // Use current end time
             };
-            state.history.unshift(historyEntry);
-            saveHistoryToBackend(historyEntry);
-            saveHistoryToLocalStorage();
-            renderHistory();
+            // Prepend to local state immediately for responsiveness
+            state.history.unshift(historyEntry); 
+            
+            // Save to backend (backend should ideally return the final entry with DB ID and accurate times)
+            saveHistoryToBackend(historyEntry); 
+            
+            // Update local storage
+            saveHistoryToLocalStorage(); 
+            
+            // Re-render everything
+            renderHistory(); 
         } else {
              console.log("Completion triggered but no description or duration=0, not saving history.");
         }
