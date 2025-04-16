@@ -1,21 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // App State
+    // --- Worker Setup ---
+    let timerWorker = null;
+    if (window.Worker) {
+        timerWorker = new Worker('/static/js/timer.worker.js');
+        timerWorker.onerror = function(error) {
+            console.error('Worker Error:', error);
+            alert('Error initializing timer worker. Timer may not function correctly.');
+        };
+    } else {
+        console.error('Web Workers not supported in this browser.');
+        alert('Your browser does not support Web Workers. Timer functionality might be limited.');
+    }
+    // ---------------------
+
+    // App State (Removed timer-specific state)
     const state = {
-        countdownRunning: false,
-        paused: false, // Added state to track pause
-        countdownInterval: null,
-        countdownMinutes: 25,
-        countdownSeconds: 0,
-        totalSecondsDuration: 25 * 60,
-        currentSessionDescription: '', // Store description for the current session
-        currentSessionTags: [], // Store tags for the current session
+        // Local state reflecting worker status for UI updates
+        isTimerActive: false, 
+        isTimerPaused: false,
+        currentDisplayMinutes: 25, // Keep track of display time
+        currentDisplaySeconds: 0,
+        initialDurationSet: 25 * 60, // Store initial duration for reset/completion
+
+        currentSessionDescription: '', 
+        currentSessionTags: [], 
         history: [],
-        activeFilterTag: null, // Added for filtering history
-        volume: 0.5, // Default volume (0.0 to 1.0)
+        activeFilterTag: null,
+        volume: 0.5
     };
 
-    const MAX_MINUTES = 180; // Define max allowed minutes
-    const SOUND_FILE = '/531030__creeeeak__bell9.wav'; // Updated sound file path
+    const MAX_MINUTES = 180; 
+    const SOUND_FILE = '/531030__creeeeak__bell9.wav'; 
 
     // DOM Elements
     const elements = {
@@ -38,6 +53,76 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeSlider: document.getElementById('volume-slider') // Slider input
     };
 
+    // --- Worker Message Handling ---
+    if (timerWorker) {
+        timerWorker.onmessage = function(event) {
+            const { type, minutes, seconds, added } = event.data;
+            // console.log('[Main] Received message:', type, event.data);
+
+            switch (type) {
+                case 'tick':
+                    state.currentDisplayMinutes = minutes;
+                    state.currentDisplaySeconds = seconds;
+                    updateCountdownDisplay(); // Update UI with received time
+                    break;
+                case 'playSound':
+                    playSound();
+                    break;
+                case 'completed':
+                    handleWorkerCompletion();
+                    break;
+                case 'started':
+                    state.isTimerActive = true;
+                    state.isTimerPaused = false;
+                    disableInputs();
+                    updateButtonStates();
+                    break;
+                case 'stopped': // From worker's stop/reset
+                    state.isTimerActive = false;
+                    state.isTimerPaused = false;
+                    enableInputs();
+                    updateButtonStates();
+                    break;
+                 case 'paused':
+                    state.isTimerActive = true; // Still active session
+                    state.isTimerPaused = true;
+                    updateButtonStates();
+                    break;
+                 case 'resumed':
+                    state.isTimerActive = true;
+                    state.isTimerPaused = false;
+                    updateButtonStates();
+                    break;
+                 case 'resetComplete': // After worker resets internal time
+                    state.isTimerActive = false;
+                    state.isTimerPaused = false;
+                    state.currentDisplayMinutes = minutes;
+                    state.currentDisplaySeconds = seconds;
+                    enableInputs(); 
+                    updateButtonStates();
+                    updateCountdownDisplay(); // Update display with reset time
+                    break;
+                 case 'timeAdded':
+                    console.log(`Worker confirmed ${added} minutes added.`);
+                    // UI/state already updated based on subsequent 'tick'
+                    break;
+            }
+        };
+    }
+    // -----------------------------
+
+    // --- Helper to play sound ---
+    function playSound() {
+         try {
+            const audio = new Audio(SOUND_FILE);
+            audio.volume = state.volume;
+            audio.play().catch(err => console.log('Audio play failed.', err));
+        } catch (err) {
+            console.error('Error playing sound:', err);
+        }
+    }
+    // --------------------------
+
     // Initialize the app
     function init() {
         // Load volume from localStorage
@@ -48,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.volumeSlider.value = state.volume; // Set slider position
 
         loadHistoryFromBackend();
-        setCountdownLength(state.countdownMinutes);
+        setCountdownLength(state.currentDisplayMinutes);
         updateCountdownDisplay();
         setupEventListeners();
         updateButtonStates();
@@ -74,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.presetButtons.forEach(btn => {
             btn.addEventListener('click', function() {
                 const minutes = parseInt(this.dataset.minutes);
-                if (!state.countdownRunning && !state.paused) { // Only allow preset change if fully stopped
+                if (!state.isTimerActive && !state.isTimerPaused) { // Only allow preset change if fully stopped
                     setCountdownLength(minutes);
                     elements.customTimeInput.value = minutes;
                     elements.presetButtons.forEach(b => b.classList.remove('active'));
@@ -92,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update Button Visibility and Text based on State
     function updateButtonStates() {
-        const isRunningOrPaused = state.countdownRunning || state.paused;
+        const isRunningOrPaused = state.isTimerActive;
 
         // Timer Controls
         elements.startButton.classList.toggle('hidden', isRunningOrPaused);
@@ -103,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add Time Controls Container Visibility
         elements.addTimeControls.classList.toggle('hidden', !isRunningOrPaused);
 
-        if (state.paused) {
+        if (state.isTimerPaused) {
             elements.pauseButton.textContent = 'Resume';
         } else {
             elements.pauseButton.textContent = 'Pause';
@@ -112,14 +197,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Countdown Functions
     function updateCountdownDisplay() {
-        const minutes = String(state.countdownMinutes).padStart(2, '0');
-        const seconds = String(state.countdownSeconds).padStart(2, '0');
+        const minutes = String(state.currentDisplayMinutes).padStart(2, '0');
+        const seconds = String(state.currentDisplaySeconds).padStart(2, '0');
         elements.timeDisplay.textContent = `${minutes}:${seconds}`;
         document.title = `${minutes}:${seconds} - TimeSpent`;
     }
 
     function updateCountdownLengthFromInput() {
-        if (state.countdownRunning || state.paused) return; // Don't allow change if running or paused
+        if (state.isTimerActive || state.isTimerPaused) return; // Don't allow change if running or paused
         let minutes = parseInt(elements.customTimeInput.value);
         if (isNaN(minutes) || minutes < 1) minutes = 1;
         if (minutes > 120) minutes = 120;
@@ -129,16 +214,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setCountdownLength(minutes) {
-        if (state.countdownRunning || state.paused) return;
-        state.countdownMinutes = minutes;
-        state.countdownSeconds = 0;
-        state.totalSecondsDuration = minutes * 60;
+        if (state.isTimerActive || state.isTimerPaused) return;
+        state.currentDisplayMinutes = minutes;
+        state.currentDisplaySeconds = 0;
+        state.initialDurationSet = minutes * 60;
         updateCountdownDisplay();
     }
 
     // Modified startCountdown to request permission if needed
     function startCountdown() {
-        if (state.countdownRunning || state.paused) return;
+        if (state.isTimerActive || state.isTimerPaused) return;
 
         // --- Request Notification Permission --- 
         if ('Notification' in window && Notification.permission === 'default') {
@@ -156,19 +241,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (state.countdownMinutes === 0 && state.countdownSeconds === 0) {
-            state.countdownMinutes = Math.floor(state.totalSecondsDuration / 60);
-            state.countdownSeconds = state.totalSecondsDuration % 60;
-            if (state.countdownMinutes === 0 && state.countdownSeconds === 0) {
-                alert('Please set a countdown duration.');
-                return; // Don't start if duration is 0
-            }
+        if (state.initialDurationSet === 0) {
+            alert('Please set a countdown duration.');
+            return; // Don't start if duration is 0
         }
 
         state.currentSessionDescription = description;
         state.currentSessionTags = extractHashtags(description);
-        state.countdownRunning = true;
-        state.paused = false;
+        state.isTimerActive = true;
+        state.isTimerPaused = false;
 
         // Disable inputs
         elements.customTimeInput.disabled = true;
@@ -176,88 +257,59 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.presetButtons.forEach(btn => btn.disabled = true);
 
         updateButtonStates(); // Show Pause, Complete, hide Start
-        state.countdownInterval = setInterval(updateCountdown, 1000);
+        sendWorkerCommand('start', { durationSeconds: state.initialDurationSet });
     }
 
     function togglePause() {
-        if (!state.countdownRunning && !state.paused) return; // Do nothing if stopped
-
-        if (state.paused) {
-            // Resume
-            state.paused = false;
-            state.countdownRunning = true;
-            state.countdownInterval = setInterval(updateCountdown, 1000);
-            // Keep inputs disabled
+        if (!state.isTimerActive) return;
+        if (state.isTimerPaused) {
+            sendWorkerCommand('resume');
         } else {
-            // Pause
-            state.paused = true;
-            state.countdownRunning = false;
-            clearInterval(state.countdownInterval);
-            // Keep inputs disabled
+            sendWorkerCommand('pause');
         }
-        updateButtonStates(); // Update button text (Pause/Resume)
+         // UI updates happen via worker messages ('paused', 'resumed')
     }
 
     // NEW function to handle completion
     function handleTaskCompleted() {
-        if (!state.countdownRunning && !state.paused) return; // Can only complete if running or paused
+        if (!state.isTimerActive) return;
+        
+        // Tell worker to stop immediately
+        sendWorkerCommand('stop');
 
-        clearInterval(state.countdownInterval);
-        state.countdownRunning = false;
-        state.paused = false;
-
-        const remainingSeconds = state.countdownMinutes * 60 + state.countdownSeconds;
-        const elapsedSeconds = state.totalSecondsDuration - remainingSeconds;
+        // Calculate elapsed time based on initial and *current displayed* time
+        const remainingSeconds = state.currentDisplayMinutes * 60 + state.currentDisplaySeconds;
+        const elapsedSeconds = state.initialDurationSet - remainingSeconds;
         const elapsedDuration = Math.max(1, Math.ceil(elapsedSeconds / 60));
 
-        const completedDescription = state.currentSessionDescription;
-        const completedTags = state.currentSessionTags;
+        saveCurrentSessionToHistory(elapsedDuration);
 
-        // Add to history locally and save to backend
-        if (completedDescription && elapsedDuration > 0) {
-            const historyEntry = {
-                // Use locally generated ID for immediate rendering key
-                id: `local_${Date.now()}`,
-                description: completedDescription,
-                tags: completedTags,
-                duration: elapsedDuration,
-                // Use created_at field name to match backend/render logic
-                created_at: new Date().toISOString() 
-            };
-
-            // Add to the beginning for immediate visibility
-            state.history.unshift(historyEntry); 
-            
-            saveHistoryToBackend(historyEntry); // Send to backend
-            saveHistoryToLocalStorage(); // Save updated history locally
-            renderHistory(); // Re-render immediately
-        }
-
-        // Reset the UI fully
-        internalReset(false); 
+        // Reset UI immediately (worker will also send 'stopped')
+        state.isTimerActive = false;
+        state.isTimerPaused = false;
+        enableInputs();
         updateButtonStates();
+        // Reset display time to initial
+        state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
+        state.currentDisplaySeconds = state.initialDurationSet % 60;
+        updateCountdownDisplay();
+        // Clear session data
+        state.currentSessionDescription = '';
+        state.currentSessionTags = [];
+        elements.sessionDescriptionInput.value = '';
     }
 
     // Modified internalReset to remove flashing logic
     function internalReset(showAlert = true) {
-        clearInterval(state.countdownInterval);
-        state.countdownRunning = false;
-        state.paused = false;
-
-        // Reset timer to the initial duration set by input/presets
-        state.countdownMinutes = Math.floor(state.totalSecondsDuration / 60);
-        state.countdownSeconds = state.totalSecondsDuration % 60;
-
-        // Re-enable inputs
+        sendWorkerCommand('reset', { durationSeconds: state.initialDurationSet });
+        state.isTimerActive = false;
+        state.isTimerPaused = false;
+        state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
+        state.currentDisplaySeconds = state.initialDurationSet % 60;
         elements.customTimeInput.disabled = false;
         elements.sessionDescriptionInput.disabled = false;
         elements.sessionDescriptionInput.value = '';
         elements.presetButtons.forEach(btn => btn.disabled = false);
-
-        // Clear temporary session data
-        state.currentSessionDescription = '';
-        state.currentSessionTags = [];
-
         updateCountdownDisplay();
         document.title = 'TimeSpent - Simple Countdown';
         if (showAlert) {
@@ -273,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateCountdown() {
         // Check if timer is about to hit zero (at 00:01)
-        if (state.countdownMinutes === 0 && state.countdownSeconds === 1) {
+        if (state.currentDisplayMinutes === 0 && state.currentDisplaySeconds === 1) {
             // Play sound 1 second early
             try {
                 const audio = new Audio(SOUND_FILE);
@@ -285,11 +337,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Decrement timer
-        if (state.countdownSeconds > 0) {
-            state.countdownSeconds--;
-        } else if (state.countdownMinutes > 0) {
-            state.countdownMinutes--;
-            state.countdownSeconds = 59;
+        if (state.currentDisplaySeconds > 0) {
+            state.currentDisplaySeconds--;
+        } else if (state.currentDisplayMinutes > 0) {
+            state.currentDisplayMinutes--;
+            state.currentDisplaySeconds = 59;
         } else {
             countdownCompleted(); // Timer reached zero
             return;
@@ -299,67 +351,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modified countdownCompleted to use Notification API
     function countdownCompleted() {
-        clearInterval(state.countdownInterval);
-        state.countdownRunning = false;
-        state.paused = false;
-
-        // --- Save History Logic --- 
-        const completedDescription = state.currentSessionDescription;
-        const completedTags = state.currentSessionTags;
-        // When timer completes naturally, duration is the total initially set duration
-        const completedDuration = Math.floor(state.totalSecondsDuration / 60);
-        // Ensure duration is at least 1 if time was set
-        const finalDuration = Math.max(1, completedDuration); 
-
-        if (completedDescription && finalDuration > 0) {
-            const historyEntry = {
-                id: `local_${Date.now()}`,
-                description: completedDescription,
-                tags: completedTags,
-                duration: finalDuration, // Use the full/calculated duration
-                created_at: new Date().toISOString() 
-            };
-
-            // Add to the beginning for immediate visibility
-            state.history.unshift(historyEntry); 
-
-            saveHistoryToBackend(historyEntry); // Send to backend
-            saveHistoryToLocalStorage(); // Save updated history locally
-        } else {
-             console.log("Timer completed but no description or duration=0, not saving history.");
-        }
-        // --- End Save History Logic ---
-
-        // --- Show Notification or Alert --- 
-        const notificationMessage = 'Time\'s up!';
-        if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-                // Attempt to show notification
-                new Notification('TimeSpent', { 
-                    body: notificationMessage,
-                    icon: '/favicon.ico' // Optional: use your favicon
-                });
-                 // If notification shown, maybe skip the alert?
-                 // Or keep alert for when window is focused? Let's keep it simple for now.
-            } catch (err) {
-                console.error('Error showing notification:', err);
-                alert(notificationMessage); // Fallback to alert if notification fails
-            }
-        } else {
-            // Fallback if notifications not supported or permission denied
-            alert(notificationMessage);
-        }
-        // --- End Notification/Alert ---
-
-        // Reset the UI fully
-        internalReset(false); 
-        renderHistory();
-        updateButtonStates(); 
+        sendWorkerCommand('stop');
+        state.isTimerActive = false;
+        state.isTimerPaused = false;
+        state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
+        state.currentDisplaySeconds = state.initialDurationSet % 60;
+        updateCountdownDisplay();
+        
+        showCompletionNotification();
     }
 
     function getCountdownDuration() {
         // This might not be needed anymore as we calculate elapsed time
-        return Math.floor(state.totalSecondsDuration / 60);
+        return Math.floor(state.initialDurationSet / 60);
     }
 
     function extractHashtags(text) {
@@ -654,33 +658,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // NEW function to add time to the countdown
     function addTime(minutesToAdd) {
-        if (!state.countdownRunning && !state.paused) return; // Only add time if running or paused
-
-        // Calculate current total seconds remaining
-        let currentTotalSeconds = state.countdownMinutes * 60 + state.countdownSeconds;
-        
-        // Calculate new total seconds (including added time)
-        let newTotalSeconds = currentTotalSeconds + minutesToAdd * 60;
-        
-        // Calculate new total duration (initial + added)
-        let newTotalDurationSeconds = state.totalSecondsDuration + minutesToAdd * 60;
-        
-        // Prevent exceeding max minutes for both remaining time and total duration
-        if ((newTotalDurationSeconds / 60) > MAX_MINUTES) {
-            alert(`Cannot add time, maximum countdown duration is ${MAX_MINUTES} minutes.`);
-            return;
-        }
-
-        // Update state for remaining time
-        state.countdownMinutes = Math.floor(newTotalSeconds / 60);
-        state.countdownSeconds = newTotalSeconds % 60;
-
-        // Update total duration state (important for elapsed time calculation)
-        state.totalSecondsDuration = newTotalDurationSeconds;
-
-        // Update display
-        updateCountdownDisplay();
-        console.log(`Added ${minutesToAdd} minutes. New duration: ${state.totalSecondsDuration / 60}m. New remaining: ${state.countdownMinutes}m ${state.countdownSeconds}s`);
+        if (!state.isTimerActive) return; // Can only add if active/paused
+        // Send addTime command to worker
+        sendWorkerCommand('addTime', { minutesToAdd });
+        // Actual time update comes from worker 'tick' message
     }
 
     // NEW: Handle Volume Change
@@ -690,6 +671,88 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('timeSpent_volume', state.volume);
         console.log("Volume changed to:", state.volume);
         // Optional: Play a short sound snippet for feedback? Maybe too much.
+    }
+
+    // --- Functions Sending Commands to Worker ---
+    function sendWorkerCommand(command, data = {}) {
+        if (!timerWorker) {
+            console.error("Timer Worker not available.");
+            return; 
+        }
+        timerWorker.postMessage({ command, data });
+    }
+
+    function disableInputs() {
+        elements.customTimeInput.disabled = true;
+        elements.sessionDescriptionInput.disabled = true;
+        elements.presetButtons.forEach(btn => btn.disabled = true);
+    }
+
+    function enableInputs() {
+        elements.customTimeInput.disabled = false;
+        elements.sessionDescriptionInput.disabled = false;
+        elements.presetButtons.forEach(btn => btn.disabled = false);
+    }
+
+    // Triggered by worker sending 'completed' message
+    function handleWorkerCompletion() {
+        // Timer reached zero naturally
+        const completedDuration = Math.floor(state.initialDurationSet / 60);
+        saveCurrentSessionToHistory(completedDuration); // Save with full duration
+
+        // Worker should have already stopped interval
+        state.isTimerActive = false;
+        state.isTimerPaused = false;
+        enableInputs();
+        updateButtonStates();
+        // Display should already be 00:00 from last worker tick
+        // Reset display time to initial for next run
+        state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
+        state.currentDisplaySeconds = state.initialDurationSet % 60;
+        updateCountdownDisplay(); // Show initial time again
+        // Clear session data
+        state.currentSessionDescription = '';
+        state.currentSessionTags = [];
+        elements.sessionDescriptionInput.value = '';
+        
+        showCompletionNotification(); // Show notification/alert
+    }
+
+    // Extracted history saving logic
+    function saveCurrentSessionToHistory(durationMinutes) {
+        const description = state.currentSessionDescription;
+        const tags = state.currentSessionTags;
+
+        if (description && durationMinutes > 0) {
+            const historyEntry = {
+                id: `local_${Date.now()}`,
+                description: description,
+                tags: tags,
+                duration: durationMinutes,
+                created_at: new Date().toISOString()
+            };
+            state.history.unshift(historyEntry);
+            saveHistoryToBackend(historyEntry);
+            saveHistoryToLocalStorage();
+            renderHistory();
+        } else {
+             console.log("Completion triggered but no description or duration=0, not saving history.");
+        }
+    }
+    
+    // Extracted notification/alert logic
+    function showCompletionNotification() {
+        const notificationMessage = 'Time\'s up!';
+        if ('Notification' in window && Notification.permission === 'granted') {
+             try {
+                new Notification('TimeSpent', { body: notificationMessage, icon: '/favicon.ico' });
+            } catch (err) {
+                console.error('Error showing notification:', err);
+                alert(notificationMessage); 
+            }
+        } else {
+            alert(notificationMessage);
+        }
     }
 
     // Initialize the app
