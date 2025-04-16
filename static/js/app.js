@@ -365,21 +365,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let currentDay = null;
         sortedHistory.forEach(entry => {
-            const entryDate = new Date(entry.date);
-            const entryDay = entryDate.toDateString(); // Use simple date string for comparison
+            // --- Robust Date Parsing --- 
+            const entryDateObj = new Date(entry.date);
+            if (isNaN(entryDateObj.getTime())) {
+                console.error("Invalid date encountered in history:", entry.date, entry);
+                // Optionally render a placeholder or skip this entry
+                // For now, we'll skip it to avoid displaying "Invalid Date"
+                return; // Skip this iteration
+            }
+            // --- Use entryDateObj for all date operations below --- 
+
+            const entryDay = entryDateObj.toDateString(); // Use simple date string for comparison
 
             // Check if day changed, insert header if needed
             if (entryDay !== currentDay) {
                 currentDay = entryDay;
                 const dateHeader = document.createElement('div');
                 dateHeader.classList.add('history-date-header');
-                dateHeader.textContent = formatDateHeader(entryDate); // Use helper for formatting
+                dateHeader.textContent = formatDateHeader(entryDateObj); // Use parsed date object
                 elements.historyList.appendChild(dateHeader);
             }
 
-            // Render the history item itself (existing logic)
-            const formattedDate = entryDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
-                                  ' ' + new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Use original date for time
+            // Render the history item itself 
+            // Use entryDateObj for formatting
+            const formattedDate = entryDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
+                                  ' ' + entryDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); 
+            
             const historyElement = document.createElement('div');
             historyElement.classList.add('history-item');
             historyElement.dataset.id = entry.id;
