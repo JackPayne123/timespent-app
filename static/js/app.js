@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentSessionTags: [], // Store tags for the current session
         history: [],
         activeFilterTag: null, // Added for filtering history
-        volume: 0.5 // Default volume (0.0 to 1.0)
+        volume: 0.5, // Default volume (0.0 to 1.0)
     };
 
     const MAX_MINUTES = 180; // Define max allowed minutes
@@ -136,8 +136,18 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCountdownDisplay();
     }
 
+    // Modified startCountdown to request permission if needed
     function startCountdown() {
-        if (state.countdownRunning || state.paused) return; // Prevent starting if already running/paused
+        if (state.countdownRunning || state.paused) return;
+
+        // --- Request Notification Permission --- 
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                console.log('Notification permission:', permission);
+                // We don't need to do anything else here, just requested.
+            });
+        }
+        // --- End Request ---
 
         const description = elements.sessionDescriptionInput.value.trim();
         if (!description) {
@@ -228,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateButtonStates();
     }
 
-    // Renamed original reset function to internalReset
+    // Modified internalReset to remove flashing logic
     function internalReset(showAlert = true) {
         clearInterval(state.countdownInterval);
         state.countdownRunning = false;
@@ -287,23 +297,64 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCountdownDisplay();
     }
 
-    // Modified: Timer hitting zero NOW ALSO saves history
+    // Modified countdownCompleted to use Notification API
     function countdownCompleted() {
         clearInterval(state.countdownInterval);
         state.countdownRunning = false;
         state.paused = false;
 
-        // Sound is played in updateCountdown
-
-        // --- Save History Logic (Added Back) ---
+        // --- Save History Logic --- 
         const completedDescription = state.currentSessionDescription;
         const completedTags = state.currentSessionTags;
         // When timer completes naturally, duration is the total initially set duration
-        alert('Time\'s up!');
+        const completedDuration = Math.floor(state.totalSecondsDuration / 60);
+        // Ensure duration is at least 1 if time was set
+        const finalDuration = Math.max(1, completedDuration); 
 
-        // Reset the UI fully, without saving
-        internalReset(false); // Reset without alert
-        updateButtonStates(); // Update buttons
+        if (completedDescription && finalDuration > 0) {
+            const historyEntry = {
+                id: `local_${Date.now()}`,
+                description: completedDescription,
+                tags: completedTags,
+                duration: finalDuration, // Use the full/calculated duration
+                created_at: new Date().toISOString() 
+            };
+
+            // Add to the beginning for immediate visibility
+            state.history.unshift(historyEntry); 
+
+            saveHistoryToBackend(historyEntry); // Send to backend
+            saveHistoryToLocalStorage(); // Save updated history locally
+        } else {
+             console.log("Timer completed but no description or duration=0, not saving history.");
+        }
+        // --- End Save History Logic ---
+
+        // --- Show Notification or Alert --- 
+        const notificationMessage = 'Time\'s up!';
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                // Attempt to show notification
+                new Notification('TimeSpent', { 
+                    body: notificationMessage,
+                    icon: '/favicon.ico' // Optional: use your favicon
+                });
+                 // If notification shown, maybe skip the alert?
+                 // Or keep alert for when window is focused? Let's keep it simple for now.
+            } catch (err) {
+                console.error('Error showing notification:', err);
+                alert(notificationMessage); // Fallback to alert if notification fails
+            }
+        } else {
+            // Fallback if notifications not supported or permission denied
+            alert(notificationMessage);
+        }
+        // --- End Notification/Alert ---
+
+        // Reset the UI fully
+        internalReset(false); 
+        renderHistory();
+        updateButtonStates(); 
     }
 
     function getCountdownDuration() {
@@ -320,8 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return tags;
     }
-
-    // Removed Task Management Functions
 
     // Rendering Functions
     function formatDateHeader(date) {
