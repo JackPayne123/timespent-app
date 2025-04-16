@@ -182,8 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const remainingSeconds = state.countdownMinutes * 60 + state.countdownSeconds;
         const elapsedSeconds = state.totalSecondsDuration - remainingSeconds;
-        // Calculate duration in minutes, rounding up.
-        // Ensure at least 1 minute is recorded if any time elapsed.
         const elapsedDuration = Math.max(1, Math.ceil(elapsedSeconds / 60));
 
         const completedDescription = state.currentSessionDescription;
@@ -192,21 +190,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add to history locally and save to backend
         if (completedDescription && elapsedDuration > 0) {
             const historyEntry = {
-                id: Date.now(),
+                // Use locally generated ID for immediate rendering key
+                id: `local_${Date.now()}`,
                 description: completedDescription,
                 tags: completedTags,
-                duration: elapsedDuration, // Use calculated elapsed duration
-                date: new Date().toISOString()
+                duration: elapsedDuration,
+                // Use created_at field name to match backend/render logic
+                created_at: new Date().toISOString() 
             };
 
-            state.history.push(historyEntry);
-            saveHistoryToBackend(historyEntry);
-            saveHistoryToLocalStorage();
-            renderHistory();
+            // Add to the beginning for immediate visibility
+            state.history.unshift(historyEntry); 
+            
+            saveHistoryToBackend(historyEntry); // Send to backend
+            saveHistoryToLocalStorage(); // Save updated history locally
+            renderHistory(); // Re-render immediately
         }
 
         // Reset the UI fully
-        internalReset(false); // Call internal reset without alert
+        internalReset(false); 
         updateButtonStates();
     }
 
