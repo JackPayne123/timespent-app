@@ -1,0 +1,33 @@
+# flyctl launch added from .gitignore
+# Environment variables
+**/.env
+
+# Python cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# OS generated files
+**/.DS_Store
+**/Thumbs.db
+
+# IDE files
+**/.vscode
+**/.idea
+
+# SQLite Database file (no longer needed)
+**/timespent.db
+
+# Python-generated files
+**/*.py[oc]
+**/build
+**/dist
+**/wheels
+**/*.egg-info
+
+# Virtual environments
+**/.venv
+
+# flyctl launch added from .venv/.gitignore
+.venv/**/*
+fly.toml

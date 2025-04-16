@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="app-version">v{{ git_version }}</div>
     <div class="app-container">
         <header>
             <h1>TimeSpent</h1>
@@ -17,8 +18,14 @@
         <div class="main-section">
             <!-- Countdown Section -->
             <div class="card timer-card">
-                <div class="timer-display">
-                    <h2 id="time-display">25:00</h2>
+                <div class="timer-display-area">
+                    <div class="timer-display">
+                        <h2 id="time-display">25:00</h2>
+                    </div>
+                    <div class="volume-controls">
+                        <button id="volume-settings-btn" class="icon-btn" title="Volume Settings">⚙️</button>
+                        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" class="hidden" title="Adjust Volume">
+                    </div>
                 </div>
 
                 <div class="timer-settings-container">

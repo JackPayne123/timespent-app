@@ -17,6 +17,24 @@ if not url or not key:
 
 supabase: Client = create_client(url, key)
 
+# Function to read the version file
+def get_git_version():
+    try:
+        # Assumes .version file is in the root directory where app.py runs
+        version_file_path = os.path.join(app.root_path, '.version')
+        with open(version_file_path, 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return 'unknown' # Fallback if file doesn't exist
+    except Exception as e:
+        print(f"Error reading version file: {e}")
+        return 'error'
+
+# Inject version into all template contexts
+@app.context_processor
+def inject_version():
+    return dict(git_version=get_git_version())
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -25,6 +43,15 @@ def index():
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+# Route to serve the specific sound file from the root directory
+@app.route('/<path:filename>')
+def serve_root_file(filename):
+    if filename == "531030__creeeeak__bell9.wav":
+        return send_from_directory(app.root_path, filename, mimetype='audio/wav')
+    else:
+        # Optionally handle other root files or return 404
+        return "File not found", 404 
 
 # API Endpoint to get all history entries from Supabase
 @app.route('/api/history', methods=['GET'])

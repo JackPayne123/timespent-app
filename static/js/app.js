@@ -1,4 +1,3 @@
-// TimeSpent App - Main JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // App State
     const state = {
@@ -11,10 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
         currentSessionDescription: '', // Store description for the current session
         currentSessionTags: [], // Store tags for the current session
         history: [],
-        activeFilterTag: null // Added for filtering history
+        activeFilterTag: null, // Added for filtering history
+        volume: 0.5 // Default volume (0.0 to 1.0)
     };
 
     const MAX_MINUTES = 180; // Define max allowed minutes
+    const SOUND_FILE = '/531030__creeeeak__bell9.wav'; // Updated sound file path
 
     // DOM Elements
     const elements = {
@@ -32,16 +33,27 @@ document.addEventListener('DOMContentLoaded', function() {
         historyList: document.getElementById('history-list'),
         historyFilterTagsContainer: document.getElementById('history-filter-tags'), // Added filter container
         clearHistoryButton: document.getElementById('clear-history-btn'), // Added clear button element
-        historyMetricsContainer: document.getElementById('history-metrics') // Added metrics container
+        historyMetricsContainer: document.getElementById('history-metrics'), // Added metrics container
+        volumeSettingsButton: document.getElementById('volume-settings-btn'), // Cog button
+        volumeSlider: document.getElementById('volume-slider') // Slider input
     };
 
     // Initialize the app
     function init() {
+        // Load volume from localStorage
+        const savedVolume = localStorage.getItem('timeSpent_volume');
+        if (savedVolume !== null) {
+            state.volume = parseFloat(savedVolume);
+        }
+        elements.volumeSlider.value = state.volume; // Set slider position
+
         loadHistoryFromBackend();
         setCountdownLength(state.countdownMinutes);
         updateCountdownDisplay();
         setupEventListeners();
         updateButtonStates();
+        // Keep slider hidden initially
+        elements.volumeSlider.classList.add('hidden');
     }
 
     // Setup Event Listeners
@@ -71,7 +83,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Removed task management event listeners
+        // Volume Control Listeners
+        elements.volumeSettingsButton.addEventListener('click', () => {
+            elements.volumeSlider.classList.toggle('hidden');
+        });
+        elements.volumeSlider.addEventListener('input', handleVolumeChange);
     }
 
     // Update Button Visibility and Text based on State
@@ -246,6 +262,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCountdown() {
+        // Check if timer is about to hit zero (at 00:01)
+        if (state.countdownMinutes === 0 && state.countdownSeconds === 1) {
+            // Play sound 1 second early
+            try {
+                const audio = new Audio(SOUND_FILE);
+                audio.volume = state.volume;
+                audio.play().catch(err => console.log('Audio play failed.', err));
+            } catch (err) {
+                console.error('Error playing sound:', err);
+            }
+        }
+
+        // Decrement timer
         if (state.countdownSeconds > 0) {
             state.countdownSeconds--;
         } else if (state.countdownMinutes > 0) {
@@ -258,20 +287,18 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCountdownDisplay();
     }
 
-    // Modified: Timer hitting zero NO LONGER saves history
+    // Modified: Timer hitting zero NOW ALSO saves history
     function countdownCompleted() {
         clearInterval(state.countdownInterval);
         state.countdownRunning = false;
         state.paused = false;
 
-        // Play notification sound
-        try {
-            const audio = new Audio('/static/sounds/notification.mp3');
-            audio.play().catch(err => console.log('Audio play failed.', err));
-        } catch (err) {
-            console.error('Error playing sound:', err);
-        }
+        // Sound is played in updateCountdown
 
+        // --- Save History Logic (Added Back) ---
+        const completedDescription = state.currentSessionDescription;
+        const completedTags = state.currentSessionTags;
+        // When timer completes naturally, duration is the total initially set duration
         alert('Time\'s up!');
 
         // Reset the UI fully, without saving
@@ -605,6 +632,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update display
         updateCountdownDisplay();
         console.log(`Added ${minutesToAdd} minutes. New duration: ${state.totalSecondsDuration / 60}m. New remaining: ${state.countdownMinutes}m ${state.countdownSeconds}s`);
+    }
+
+    // NEW: Handle Volume Change
+    function handleVolumeChange(event) {
+        state.volume = parseFloat(event.target.value);
+        // Save volume to localStorage
+        localStorage.setItem('timeSpent_volume', state.volume);
+        console.log("Volume changed to:", state.volume);
+        // Optional: Play a short sound snippet for feedback? Maybe too much.
     }
 
     // Initialize the app

@@ -119,22 +119,91 @@ header h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 30px; /* Increased gap */
-    border-bottom: 1px solid var(--light-gray); /* Keep border for this section */
+    gap: 30px; 
+    border-bottom: 1px solid var(--light-gray);
     padding-bottom: 40px;
+    position: relative; /* Needed for absolute positioning of volume slider */
+}
+
+.timer-display-area {
+    position: relative; /* Container for display and controls */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .timer-display {
     text-align: center;
+    /* Removed margin-bottom if any */
 }
 
 #time-display {
-    font-size: 6rem; /* Larger */
-    font-weight: 500; /* Medium weight */
+    font-size: 6rem; 
+    font-weight: 500; 
     color: var(--text-color);
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    margin-bottom: 15px; /* Increased margin */
+    margin-bottom: 0; /* Remove bottom margin as spacing handled by parent */
+}
+
+/* Volume Controls Styling */
+.volume-controls {
+    position: absolute; /* Position relative to timer-display-area */
+    right: 0;
+    top: 0; /* Align top */
+    display: flex;
+    flex-direction: column; /* Stack icon and slider */
+    align-items: flex-end;
+}
+
+button.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem; /* Adjust icon size */
+    color: var(--dark-gray);
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    box-shadow: none;
+}
+button.icon-btn:hover {
+    color: var(--text-color);
+}
+
+#volume-slider {
+    appearance: none; /* Override default look */
+    -webkit-appearance: none;
+    width: 80px; /* Adjust width */
+    height: 6px; /* Slider track height */
+    background: var(--light-gray); /* Track color */
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    margin-top: 8px; /* Space between icon and slider */
+}
+/* Remove default hidden style if relying on JS toggle */
+/* #volume-slider.hidden { display: none; } */
+
+/* Styling the slider thumb (Chrome, Safari, Edge) */
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 16px; /* Thumb width */
+    height: 16px; /* Thumb height */
+    background: var(--primary-color); /* Thumb color */
+    border-radius: 50%; /* Circular thumb */
+    cursor: pointer;
+}
+
+/* Styling the slider thumb (Firefox) */
+#volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none; /* Remove Firefox default border */
 }
 
 /* Styles for combined presets and input */
@@ -465,6 +534,19 @@ button:disabled {
     color: var(--text-secondary);
     padding: 40px 20px; /* More padding */
     font-style: normal; /* Less italic */
+}
+
+/* Version Display Styling */
+.app-version {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 0.75rem;
+    color: var(--dark-gray);
+    background-color: var(--subtle-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 10; /* Ensure it's above other elements if needed */
 }
 
 /* Responsive adjustments */

@@ -26,3 +26,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Build artifacts
+.version
