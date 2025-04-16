@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeSpent - Simple Countdown</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>TimeSpent</h1>
+            <p class="tagline">Track your time, improve your productivity</p>
+        </header>
+
+        <div class="main-section">
+            <!-- Countdown Section -->
+            <div class="card timer-card">
+                <div class="timer-display">
+                    <h2 id="time-display">25:00</h2>
+                </div>
+
+                <div class="timer-settings-container">
+                    <button class="preset-btn" data-minutes="25">25m</button>
+                    <button class="preset-btn" data-minutes="50">50m</button>
+                    <button class="preset-btn" data-minutes="90">90m</button>
+                    <input type="number" id="custom-time" min="1" max="180" placeholder="min" title="Set custom time (minutes)">
+                </div>
+
+                <div class="session-description-container">
+                    <input type="text" id="session-description" placeholder="What are you working on?">
+                </div>
+
+                <!-- Add Time Controls (Moved Above) -->
+                <div class="add-time-controls hidden"> 
+                    <button id="add-5m-btn" class="secondary small">+5m</button>
+                    <button id="add-15m-btn" class="secondary small">+15m</button>
+                </div>
+
+                <div class="timer-controls">
+                    <button id="start-timer-btn" class="primary">Start</button>
+                    <button id="pause-timer-btn" class="secondary hidden">Pause</button>
+                    <button id="task-completed-btn" class="success hidden">Task Completed</button>
+                    <button id="reset-timer-btn" class="secondary">Reset</button>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="card history-card">
+                <div class="card-header">
+                    <h3>History</h3>
+                    <div class="history-header-controls">
+                        <div id="history-filter-tags" class="filter-tags-container">
+                            <!-- Filter tags will be dynamically added here -->
+                        </div>
+                        <button id="clear-history-btn" class="danger small">Clear History</button> 
+                    </div>
+                </div>
+                <!-- History Metrics Display -->
+                <div id="history-metrics" class="history-metrics-container">
+                    <!-- Metrics will be rendered here by JS -->
+                </div>
+                <div id="history-list" class="history-list">
+                    <!-- History entries will be added here by JavaScript -->
+                    <div class="no-tasks">No completed sessions yet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Task Modal -->
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

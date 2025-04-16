@@ -1,0 +1,605 @@
+:root {
+    /* Heexo-Inspired Warm Palette */
+    --primary-color: #F97316; /* Orange-500 */
+    --primary-hover: #EA580C; /* Orange-600 */
+    --secondary-color: #6B7280; /* Gray-500 */
+    --accent-color: #F97316; /* Using primary for accent */
+    --background-color: #FFFFFF; /* White background */
+    --subtle-bg: #F9FAFB; /* Gray-50 - for subtle backgrounds if needed */
+    --card-background: #FFFFFF; /* Keep variable, but style will change */
+    --text-color: #1F2937; /* Gray-800 */
+    --text-secondary: #6B7280; /* Gray-500 */
+    --light-gray: #E5E7EB; /* Gray-200 */
+    --medium-gray: #D1D5DB; /* Gray-300 */
+    --dark-gray: #9CA3AF; /* Gray-400 */
+    --success-color: #10B981; /* Emerald-500 */
+    --danger-color: #EF4444; /* Red-500 */
+    
+    /* Reset shadows - less emphasis */
+    --shadow: none;
+    --shadow-lg: none;
+    --shadow-md: none;
+
+    --border-radius: 8px; /* Slightly reduced radius */
+    --input-radius: 6px;
+    --transition: all 0.2s ease-in-out;
+    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px; /* Increased top padding */
+}
+
+.app-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 50px; /* Increased margin */
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+header h1 {
+    font-size: 2.25rem; /* Adjusted size */
+    font-weight: 600; /* Slightly less bold */
+    color: var(--text-color); /* Darker header */
+    margin-bottom: 8px;
+}
+
+.tagline {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+/* Main layout */
+.main-section {
+    display: flex;
+    flex-direction: column;
+    gap: 50px; /* Increased gap */
+}
+
+/* Cards -> Sections (Remove background/shadow) */
+.card {
+    background-color: transparent; /* Remove card background */
+    border-radius: 0; /* Remove radius */
+    padding: 0; /* Remove padding */
+    box-shadow: none; /* Remove shadow */
+    width: 100%;
+    /* Add bottom border for separation */
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 40px; /* Space below the border */
+}
+
+/* Remove border from last section */
+.main-section > div:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px; /* Increased margin */
+    padding-bottom: 15px; /* Increased padding */
+    border-bottom: none; /* Remove internal border */
+}
+
+.card-header h3 {
+    color: var(--text-color);
+    font-size: 1.5rem; /* Larger section heading */
+    font-weight: 600;
+}
+
+/* Countdown Section Specifics */
+.timer-card { 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px; /* Increased gap */
+    border-bottom: 1px solid var(--light-gray); /* Keep border for this section */
+    padding-bottom: 40px;
+}
+
+.timer-display {
+    text-align: center;
+}
+
+#time-display {
+    font-size: 6rem; /* Larger */
+    font-weight: 500; /* Medium weight */
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    margin-bottom: 15px; /* Increased margin */
+}
+
+/* Styles for combined presets and input */
+.timer-settings-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px; /* Increased gap */
+}
+
+#custom-time {
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--input-radius);
+    font-size: 0.9rem;
+    width: 70px; 
+    text-align: center;
+    transition: var(--transition);
+    margin: 0;
+    line-height: 1.4;
+    background-color: var(--background-color);
+    appearance: textfield; /* Try to remove arrows */
+    -moz-appearance: textfield; /* Firefox */
+}
+
+/* Hide number input arrows (spinners) */
+#custom-time::-webkit-outer-spin-button,
+#custom-time::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#custom-time::placeholder {
+    color: var(--dark-gray);
+}
+
+#custom-time:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3); /* Orange focus */
+}
+
+#custom-time:disabled {
+    background-color: var(--subtle-bg); /* Use subtle bg */
+    cursor: not-allowed;
+}
+
+/* Preset Button Style Update */
+.preset-btn {
+    background-color: var(--subtle-bg);
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--input-radius);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.preset-btn:hover {
+    background-color: var(--light-gray);
+    border-color: var(--dark-gray);
+    color: var(--text-color);
+}
+
+.preset-btn.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.1);
+}
+
+.preset-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Session Description Input */
+.session-description-container {
+    width: 100%;
+    max-width: 450px; 
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 15px; /* Adjusted margin */
+}
+
+#session-description {
+    width: 100%;
+    padding: 10px 5px; /* Adjusted padding */
+    border: none; /* Remove existing border */
+    border-bottom: 1px solid var(--medium-gray); /* Add only bottom border */
+    border-radius: 0; /* Remove border radius */
+    font-size: 1.1rem; /* Increased font size */
+    transition: var(--transition);
+    background-color: transparent; /* Make background transparent */
+    line-height: 1.5;
+    text-align: center; /* Center text */
+}
+
+#session-description::placeholder {
+    color: var(--dark-gray);
+    text-align: center; /* Center placeholder too */
+}
+
+#session-description:focus {
+    outline: none;
+    border-bottom-color: var(--primary-color); /* Change only bottom border color on focus */
+    box-shadow: none; /* Remove focus box-shadow */
+}
+
+#session-description:disabled {
+    background-color: transparent; /* Keep transparent */
+    color: var(--dark-gray); /* Dim text color */
+    border-bottom-style: dashed; /* Indicate disabled state */
+    cursor: not-allowed;
+}
+
+/* Timer controls spacing */
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    margin-top: 30px; /* Increased margin */
+}
+
+/* --- Button Style Overhaul --- */
+button {
+    padding: 10px 22px; /* Slightly more horizontal padding */
+    border-radius: var(--input-radius);
+    border: 1px solid transparent;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: transparent;
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); /* Subtle shadow */
+}
+
+/* Primary Button Style (Orange, Filled, Subtle Gradient/Shadow) */
+button.primary {
+    background-color: var(--primary-color);
+    /* Optional: Add a subtle gradient */
+    /* background-image: linear-gradient(to bottom, #F97316, #EA580C); */
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.1); /* Subtle inner top highlight */
+}
+
+button.primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Remove inset shadow on hover */
+}
+
+/* Secondary Button Style (Gray, Outlined) */
+button.secondary {
+    background-color: var(--background-color);
+    border-color: var(--medium-gray);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+button.secondary:hover {
+    border-color: var(--secondary-color);
+    background-color: var(--subtle-bg);
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Slightly stronger shadow */
+}
+
+/* Success Button Style (Green, Outlined/Subtle?) */
+button.success {
+    background-color: var(--background-color);
+    border-color: var(--success-color);
+    color: var(--success-color);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+button.success:hover {
+    background-color: #ECFDF5; /* Subtle green bg */
+    border-color: #059669; /* Darker emerald */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Danger Button Style (Red Text/Subtle) */
+button.danger {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--danger-color);
+    padding: 6px 10px;
+    box-shadow: none; /* No shadow for text-like button */
+}
+
+button.danger:hover {
+    background-color: #FEF2F2; /* Subtle red bg */
+    color: #B91C1C; /* Darker red */
+    box-shadow: none;
+}
+
+/* Small button adjustments if needed */
+button.small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- History Section --- */
+.history-card .card-header {
+    margin-bottom: 20px;
+}
+
+.card-header .history-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Reduced gap */
+}
+
+.card-header .filter-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px; /* Reduced gap */
+    justify-content: flex-end;
+}
+
+/* Filter Tag Button Style */
+.filter-tag-btn {
+    background-color: var(--subtle-bg);
+    border: 1px solid var(--light-gray);
+    border-radius: 15px; /* Pill shape */
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: none;
+}
+
+.filter-tag-btn:hover {
+    background-color: var(--light-gray);
+    border-color: var(--medium-gray);
+    color: var(--text-color);
+}
+
+.filter-tag-btn.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.history-list {
+    margin-top: 0; /* Remove top margin */
+    max-height: 500px; /* Allow more height */
+    overflow-y: auto;
+    padding-right: 10px; 
+}
+
+/* ... scrollbar styles ... */
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0; /* Increased padding */
+    border-bottom: 1px solid var(--light-gray);
+    transition: background-color 0.15s ease;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.task-info {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.task-description {
+    font-weight: 500;
+    margin-bottom: 6px; /* Increased spacing */
+    color: var(--text-color);
+}
+
+/* History Tag Style */
+.task-tag {
+    display: inline-block;
+    background-color: #FEF3C7; /* Lighter Yellow/Orange for tags */
+    color: #D97706; /* Darker Amber */
+    padding: 3px 10px;
+    border-radius: 15px; /* Pill shape */
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 8px;
+    margin-bottom: 4px; /* Add bottom margin for wrapping */
+    cursor: pointer; /* Make tags clickable */
+}
+
+.task-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.task-meta .duration-time {
+    /* Style specifically if needed */
+    margin-left: 2px; /* Add slight space if tags exist */
+}
+
+.no-tasks {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 20px; /* More padding */
+    font-style: normal; /* Less italic */
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    body {
+        padding-top: 30px;
+    }
+
+    .app-container {
+        padding: 15px;
+    }
+
+    header {
+        margin-bottom: 30px;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .main-section {
+        gap: 30px;
+    }
+
+    .card, .timer-card {
+        padding-bottom: 30px;
+    }
+
+    .card-header {
+        margin-bottom: 20px;
+    }
+
+    .card-header h3 {
+        font-size: 1.25rem;
+    }
+
+    #time-display {
+        font-size: 4.5rem;
+    }
+
+    .timer-settings-container {
+        gap: 8px;
+    }
+
+    #custom-time {
+        width: 60px;
+        padding: 6px 8px;
+    }
+    
+    .preset-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    #session-description {
+        padding: 10px 12px;
+    }
+
+    .timer-controls {
+        margin-top: 20px;
+        flex-direction: row; /* Keep row maybe? */
+        flex-wrap: wrap; /* Allow wrapping */
+        gap: 10px;
+    }
+    
+    button {
+        padding: 8px 15px; /* Adjust button padding */
+        font-size: 0.9rem;
+    }
+
+    .card-header .history-header-controls {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    }
+} 
+
+/* Add Time Controls Styling */
+.add-time-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px; /* Space between add-time and main controls */
+    width: 100%;
+}
+
+/* Timer controls spacing */
+.timer-controls {
+    /* ... existing styles ... */
+}
+
+/* History Metrics Styling */
+#history-metrics {
+    margin-bottom: 25px; /* Space below metrics */
+    padding: 15px;
+    background-color: var(--subtle-bg);
+    border: 1px solid var(--light-gray);
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: space-around; /* Distribute metrics */
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.metric-item {
+    text-align: center;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* History Date Header Styling */
+.history-date-header {
+    margin-top: 20px; /* Space above date */
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.history-date-header:first-of-type {
+    margin-top: 0; /* No top margin for the very first header */
+}
+
+.history-list {
+    /* ... existing styles ... */
+} 
