@@ -331,9 +331,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let sessionsToday = 0;
 
         state.history.forEach(entry => {
-            const entryDate = new Date(entry.date);
+            // Use created_at for metrics calculation
+            const entryDate = new Date(entry.created_at); 
             entryDate.setHours(0, 0, 0, 0);
-            if (entryDate.getTime() === today.getTime()) {
+            if (!isNaN(entryDate.getTime()) && entryDate.getTime() === today.getTime()) { // Check date validity here too
                 totalTimeToday += entry.duration;
                 sessionsToday++;
             }
@@ -361,16 +362,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const sortedHistory = [...filteredHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Use created_at for sorting
+        const sortedHistory = [...filteredHistory].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         
         let currentDay = null;
         sortedHistory.forEach(entry => {
-            // --- Robust Date Parsing --- 
-            const entryDateObj = new Date(entry.date);
+            // --- Robust Date Parsing using created_at --- 
+            const entryDateObj = new Date(entry.created_at);
             if (isNaN(entryDateObj.getTime())) {
-                console.error("Invalid date encountered in history:", entry.date, entry);
-                // Optionally render a placeholder or skip this entry
-                // For now, we'll skip it to avoid displaying "Invalid Date"
+                console.error("Invalid date encountered in history:", entry.created_at, entry);
                 return; // Skip this iteration
             }
             // --- Use entryDateObj for all date operations below --- 
