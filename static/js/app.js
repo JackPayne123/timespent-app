@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
         currentSessionTags: [], 
         history: [],
         activeFilterTag: null,
-        volume: 0.5
+        volume: 0.5,
+        includeBreaksInMetrics: true // NEW: State for break toggle
     };
 
     const MAX_MINUTES = 180; 
@@ -52,7 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeSettingsButton: document.getElementById('volume-settings-btn'), // Cog button
         volumeSlider: document.getElementById('volume-slider'), // Slider input
         presetTagsContainer: document.getElementById('preset-tags-container'), // For preset tag buttons
-        dayTrackingViewContainer: document.getElementById('day-tracking-view') // For daily summary view
+        dayTrackingViewContainer: document.getElementById('day-tracking-view'), // For daily summary view
+        includeBreaksToggle: document.getElementById('include-breaks-toggle') // NEW: Checkbox element
     };
 
     // --- Worker Message Handling ---
@@ -134,6 +136,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         elements.volumeSlider.value = state.volume; // Set slider position
 
+        // NEW: Load break toggle state from localStorage
+        const savedIncludeBreaks = localStorage.getItem('timeSpent_includeBreaks');
+        if (savedIncludeBreaks !== null) {
+            state.includeBreaksInMetrics = JSON.parse(savedIncludeBreaks);
+        }
+        elements.includeBreaksToggle.checked = state.includeBreaksInMetrics; // Set checkbox state
+
         loadHistoryFromBackend();
         setCountdownLength(state.currentDisplayMinutes);
         updateCountdownDisplay();
@@ -175,6 +184,9 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.volumeSlider.classList.toggle('hidden');
         });
         elements.volumeSlider.addEventListener('input', handleVolumeChange);
+
+        // NEW: Listener for the break toggle checkbox
+        elements.includeBreaksToggle.addEventListener('change', handleBreakToggleChange);
     }
 
     // Update Button Visibility and Text based on State
@@ -257,6 +269,8 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.customTimeInput.disabled = true;
         elements.sessionDescriptionInput.disabled = true;
         elements.presetButtons.forEach(btn => btn.disabled = true);
+        elements.sessionDescriptionInput.classList.add('timer-active-style'); // Add class for styling
+        elements.presetTagsContainer.classList.add('hidden'); // Hide preset tags
 
         updateButtonStates(); // Show Pause, Complete, hide Start
         sendWorkerCommand('start', { durationSeconds: state.initialDurationSet });
@@ -413,19 +427,24 @@ document.addEventListener('DOMContentLoaded', function() {
         renderFilterTags();
 
         // 2. Filter History based on active tag
-        const filteredHistory = state.activeFilterTag
+        let filteredHistory = state.activeFilterTag
             ? state.history.filter(entry => entry.tags && entry.tags.includes(state.activeFilterTag))
             : state.history; 
 
-        // 3. Calculate Metrics for Today based on FILTERED history
+        // 2.5 NEW: Filter out breaks if toggle is off (for metrics calculation)
+        const historyForMetrics = state.includeBreaksInMetrics
+            ? filteredHistory // Use the tag-filtered list as is
+            : filteredHistory.filter(entry => !(entry.tags && entry.tags.includes('break'))); // Exclude breaks
+
+        // 3. Calculate Metrics for Today based on FILTERED history (historyForMetrics)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         let totalTimeToday = 0;
         let sessionsToday = 0;
         const todayStartTime = today.getTime(); // Get timestamp once
 
-        // Use filteredHistory for metrics calculation
-        filteredHistory.forEach(entry => {
+        // Use historyForMetrics for metrics calculation
+        historyForMetrics.forEach(entry => {
             // Use start_time for metrics calculation and ensure it's valid
             if (!entry.start_time) return; // Skip if no start_time
             const entryDate = new Date(entry.start_time); 
@@ -440,18 +459,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 4. Render Metrics - Update labels if filtered
         const filterSuffix = state.activeFilterTag ? ` (#${state.activeFilterTag})` : '';
+        const breaksSuffix = !state.includeBreaksInMetrics ? ' (excl. breaks)' : ''; // NEW suffix
         elements.historyMetricsContainer.innerHTML = `
             <div class="metric-item">
                 <span class="metric-value">${sessionsToday}</span>
-                <span class="metric-label">Sessions Today${filterSuffix}</span>
+                <span class="metric-label">Sessions Today${filterSuffix}${breaksSuffix}</span>
             </div>
             <div class="metric-item">
                 <span class="metric-value">${totalTimeToday} min</span>
-                <span class="metric-label">Total Time Today${filterSuffix}</span>
+                <span class="metric-label">Total Time Today${filterSuffix}${breaksSuffix}</span>
             </div>
         `;
 
-        // 5. Group Filtered History by Day and Render List
+        // 5. Group Filtered History by Day and Render List (use original filteredHistory for the list display)
         elements.historyList.innerHTML = ''; // Clear previous list
         if (filteredHistory.length === 0) {
             const message = state.activeFilterTag 
@@ -459,12 +479,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 : 'No completed sessions yet.';
             elements.historyList.innerHTML = `<div class="no-tasks">${message}</div>`;
             // Still render day tracking and preset tags even if history list is empty
-            renderDayTrackingView(filteredHistory); // Pass filtered history
+            renderDayTrackingView(historyForMetrics); // Pass historyForMetrics to day tracking
             renderPresetTags(); 
             return; 
         }
 
-        // Use start_time for sorting
+        // Use start_time for sorting (use original filteredHistory)
         const sortedHistory = [...filteredHistory].sort((a, b) => {
              // Handle potential missing or invalid dates during sort
             const dateA = a.start_time ? new Date(a.start_time) : null;
@@ -481,23 +501,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("Missing start_time for history entry:", entry);
                 return; // Skip entry if no start_time
             }
-            // Attempt to parse end_time, handle if missing or invalid
-            // --- Remove Logging --- 
-            // console.log(`[renderHistory] Entry ID: ${entry.id}, Raw start_time: ${entry.start_time}`); 
             const startDateObj = new Date(entry.start_time);
             if (isNaN(startDateObj.getTime())) {
-                // console.error("[renderHistory] Invalid start_time after parsing:", entry.start_time, entry);
                 return; // Skip this iteration
             }
-            // console.log(`[renderHistory] Parsed startDateObj: ${startDateObj.toISOString()}`);
-            // --- End Logging ---
             
             let endDateObj = null;
             let endTimeString = '';
             if (entry.end_time) {
                 endDateObj = new Date(entry.end_time);
                 if (!isNaN(endDateObj.getTime())) {
-                     endTimeString = endDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                     endTimeString = endDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); // Ensure 24hr
                 } else {
                     console.warn("Invalid end_time encountered for entry:", entry.id, entry.end_time);
                     endDateObj = null; // Treat as invalid
@@ -505,7 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                  console.warn("Missing end_time for entry:", entry.id);
             }
-            // --- Use startDateObj for date operations below --- 
 
             const entryDay = startDateObj.toDateString(); // Use simple date string for comparison
 
@@ -519,20 +532,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Render the history item itself 
-            // Use startDateObj for formatting the start time
-            // --- Remove Logging around formatting --- 
-            // console.log(`[renderHistory Formatting] Before toLocaleTimeString for ID ${entry.id}:`, startDateObj);
             const startTimeString = startDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); // Explicitly use 24-hour format
-            // console.log(`[renderHistory Formatting] After toLocaleTimeString for ID ${entry.id}: startTimeString = "${startTimeString}"`);
-            // --- End Logging ---
             const dateString = startDateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); 
             
-            // Construct time display: Start - End or just Start if end is missing/invalid
             const timeDisplay = endTimeString ? `${startTimeString} - ${endTimeString}` : startTimeString;
             
             const historyElement = document.createElement('div');
             historyElement.classList.add('history-item');
-            historyElement.dataset.id = entry.id; // Assuming backend provides a unique ID
+            historyElement.dataset.id = entry.id; 
             const safeDescription = document.createElement('div');
             safeDescription.textContent = entry.description;
             let tagsHTML = '';
@@ -550,13 +557,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <button class="delete-history-item-btn" title="Delete entry">×</button> 
-            `; // Added delete button
+            `; 
             
-            // Add event listener for the new delete button
             const deleteButton = historyElement.querySelector('.delete-history-item-btn');
             if (deleteButton) {
                 deleteButton.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent potential clicks on parent elements
+                    e.stopPropagation(); 
                     if (confirm('Are you sure you want to delete this history entry?')) {
                         deleteHistoryEntryFromBackend(entry.id);
                     }
@@ -572,11 +578,12 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.historyList.appendChild(historyElement);
         });
 
-        // 6. Render Day Tracking View (using filtered history)
-        renderDayTrackingView(filteredHistory);
+        // 6. Render Day Tracking View (passing historyForMetrics)
+        renderDayTrackingView(historyForMetrics);
 
-        // 7. Render Preset Tags (based on full history)
-        renderPresetTags();
+        // 7. Render Preset Tags (based on full history - or maybe filtered?)
+        // Let's keep preset tags based on full history for now
+        renderPresetTags(); 
     }
 
     function renderFilterTags() {
@@ -691,18 +698,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // NEW: Render Day Tracking View
-    function renderDayTrackingView(historyData) { // Accepts history data (can be filtered)
+    function renderDayTrackingView(historyData) { // Accepts history data (potentially pre-filtered for breaks)
         if (!elements.dayTrackingViewContainer) return;
 
         const dailyTotals = {}; // { 'YYYY-MM-DD': totalMinutes }
 
+        // History data is already filtered for breaks if necessary by the caller (renderHistory)
         historyData.forEach(entry => {
              if (!entry.start_time || !entry.duration) return; // Need start_time and duration
 
              const startDate = new Date(entry.start_time);
              if (isNaN(startDate.getTime())) return; // Skip invalid dates
 
-             const dayKey = startDate.toISOString().split('T')[0]; // 'YYYY-MM-DD' format
+             // Use local date components for the key
+             const year = startDate.getFullYear();
+             const month = String(startDate.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+             const day = String(startDate.getDate()).padStart(2, '0');
+             const dayKey = `${year}-${month}-${day}`; // Use local 'YYYY-MM-DD'
 
              dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + entry.duration;
         });
@@ -710,17 +722,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort days chronologically
         const sortedDays = Object.entries(dailyTotals).sort(([dayA], [dayB]) => dayA.localeCompare(dayB));
 
-        // Generate HTML (simple list for now)
-        let html = '<h3 class="view-title">Daily Totals</h3>';
+        // Generate HTML 
+        const breaksSuffix = !state.includeBreaksInMetrics ? ' (excl. breaks)' : ''; // Add suffix here too
+        let html = `<h3 class="view-title">Daily Totals${breaksSuffix}</h3>`; 
         if (sortedDays.length === 0) {
-            html += '<p class="no-data">No activity recorded for the selected filter.</p>';
+            const baseMessage = state.activeFilterTag 
+                ? 'No activity recorded for the selected filter.'
+                : 'No activity recorded yet.';
+            html += `<p class="no-data">${baseMessage}${breaksSuffix}</p>`;
         } else {
             html += '<ul class="daily-totals-list">';
             sortedDays.forEach(([day, totalMinutes]) => {
-                 // Format date nicely for display
-                const dateObj = new Date(day + 'T00:00:00'); // Ensure correct local timezone interpretation
-                const displayDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-                html += `<li><span class="date">${displayDate}:</span> <span class="time">${totalMinutes} min</span></li>`;
+                 const dateObj = new Date(day + 'T00:00:00'); 
+                 const displayDate = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+                 const today = new Date();
+                 today.setHours(0, 0, 0, 0);
+                 const displayDayDate = new Date(dateObj); // Use a copy
+                 displayDayDate.setHours(0, 0, 0, 0);
+                 const dateLabel = (displayDayDate.getTime() === today.getTime()) ? 'Today' : displayDate;
+                 
+                 html += `<li><span class="date">${dateLabel}:</span> <span class="time">${totalMinutes} min</span></li>`;
             });
             html += '</ul>';
         }
@@ -883,7 +905,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save volume to localStorage
         localStorage.setItem('timeSpent_volume', state.volume);
         console.log("Volume changed to:", state.volume);
-        // Optional: Play a short sound snippet for feedback? Maybe too much.
+    }
+
+    // NEW: Handle Break Toggle Change
+    function handleBreakToggleChange(event) {
+        state.includeBreaksInMetrics = event.target.checked;
+        // Save preference to localStorage
+        localStorage.setItem('timeSpent_includeBreaks', JSON.stringify(state.includeBreaksInMetrics));
+        console.log("Include breaks in metrics:", state.includeBreaksInMetrics);
+        renderHistory(); // Re-render everything to reflect the change
     }
 
     // --- Functions Sending Commands to Worker ---
@@ -899,12 +929,16 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.customTimeInput.disabled = true;
         elements.sessionDescriptionInput.disabled = true;
         elements.presetButtons.forEach(btn => btn.disabled = true);
+        elements.sessionDescriptionInput.classList.add('timer-active-style'); // Add class for styling
+        elements.presetTagsContainer.classList.add('hidden'); // Hide preset tags
     }
 
     function enableInputs() {
         elements.customTimeInput.disabled = false;
         elements.sessionDescriptionInput.disabled = false;
         elements.presetButtons.forEach(btn => btn.disabled = false);
+        elements.sessionDescriptionInput.classList.remove('timer-active-style'); // Remove class
+        elements.presetTagsContainer.classList.remove('hidden'); // Show preset tags
     }
 
     // Triggered by worker sending 'completed' message
@@ -973,9 +1007,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 new Notification('TimeSpent', { body: notificationMessage, icon: '/favicon.ico' });
             } catch (err) {
                 console.error('Error showing notification:', err);
-                alert(notificationMessage); 
+                alert(notificationMessage); // Fallback to alert if Notification fails
             }
         } else {
+            // Fallback to alert if permission not granted or API not supported
             alert(notificationMessage);
         }
     }

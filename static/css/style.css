@@ -1,29 +1,45 @@
 :root {
-    /* Heexo-Inspired Warm Palette */
-    --primary-color: #F97316; /* Orange-500 */
-    --primary-hover: #EA580C; /* Orange-600 */
-    --secondary-color: #6B7280; /* Gray-500 */
-    --accent-color: #F97316; /* Using primary for accent */
-    --background-color: #FFFFFF; /* White background */
-    --subtle-bg: #F9FAFB; /* Gray-50 - for subtle backgrounds if needed */
-    --card-background: #FFFFFF; /* Keep variable, but style will change */
-    --text-color: #1F2937; /* Gray-800 */
-    --text-secondary: #6B7280; /* Gray-500 */
-    --light-gray: #E5E7EB; /* Gray-200 */
-    --medium-gray: #D1D5DB; /* Gray-300 */
-    --dark-gray: #9CA3AF; /* Gray-400 */
-    --success-color: #10B981; /* Emerald-500 */
-    --danger-color: #EF4444; /* Red-500 */
+    /* Applica-Inspired Palette */
+    --color-amber: #FFBC2D;
+    --color-dun: #BEBAAC;
+    --color-walnut: #6C5F54;
+    --color-isabelline: #F3F2EE;
+    --color-cafe: #473729;
+    --color-jet: #302F2B;
+    --color-white: #FFFFFF;
+    --color-forest-green: #006400; /* Added Forest Green */
+
+    /* Semantic Colors */
+    --primary-color: var(--color-amber); /* Amber for primary actions */
+    --primary-hover: #e6a928; /* Darker Amber */
+    --secondary-color: var(--color-dun); /* Dun for secondary elements/borders */
+    --accent-color: var(--color-forest-green); /* Forest Green for accents */
+    --background-color: var(--color-isabelline); /* Isabelline for main background */
+    --card-background: var(--color-white); /* White for card backgrounds */
+    --text-color: var(--color-jet); /* Jet for primary text */
+    --text-secondary: var(--color-walnut); /* Walnut for secondary text */
+    --subtle-bg: #fcfbfa; /* Even Lighter Isabelline for subtle backgrounds */
+    --light-gray: #e0deda; /* Derived from Isabelline/Dun mix for light borders */
+    --medium-gray: var(--color-dun); /* Dun as medium gray */
+    --dark-gray: var(--color-walnut); /* Walnut as dark gray */
+    --border-color: #e0deda; /* Default border color */
     
-    /* Reset shadows - less emphasis */
+    --success-color: #10B981; /* Keep Emerald for success */
+    --danger-color: #EF4444; /* Keep Red for danger */
+    
+    /* Reset shadows - less emphasis (keep from previous) */
     --shadow: none;
     --shadow-lg: none;
     --shadow-md: none;
 
-    --border-radius: 8px; /* Slightly reduced radius */
-    --input-radius: 6px;
+    /* Fonts */
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    
+    --border-radius: 8px; /* Keep */
+    --input-radius: 6px; /* Keep */
     --transition: all 0.2s ease-in-out;
-    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-family: var(--font-body); /* Set default body font */
 }
 
 * {
@@ -63,9 +79,10 @@ header {
 }
 
 header h1 {
-    font-size: 2.25rem; /* Adjusted size */
-    font-weight: 600; /* Slightly less bold */
-    color: var(--text-color); /* Darker header */
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
     margin-bottom: 8px;
 }
 
@@ -89,7 +106,7 @@ header h1 {
     box-shadow: none; /* Remove shadow */
     width: 100%;
     /* Add bottom border for separation */
-    border-bottom: 1px solid var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 40px; /* Space below the border */
 }
 
@@ -109,8 +126,9 @@ header h1 {
 }
 
 .card-header h3 {
+    font-family: var(--font-heading);
     color: var(--text-color);
-    font-size: 1.5rem; /* Larger section heading */
+    font-size: 1.7rem;
     font-weight: 600;
 }
 
@@ -139,8 +157,9 @@ header h1 {
 }
 
 #time-display {
-    font-size: 6rem; 
-    font-weight: 500; 
+    font-family: var(--font-body);
+    font-size: 6rem;
+    font-weight: 500;
     color: var(--text-color);
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -160,15 +179,22 @@ header h1 {
 button.icon-btn {
     background: none;
     border: none;
-    font-size: 1.5rem; /* Adjust icon size */
-    color: var(--dark-gray);
+    font-size: 1.2rem; /* Adjust size slightly for SVG */
+    color: var(--text-secondary); /* Use Walnut */
     cursor: pointer;
     padding: 5px;
     line-height: 1;
     box-shadow: none;
+    display: inline-flex; /* Align SVG nicely */
+    align-items: center;
+    justify-content: center;
+}
+button.icon-btn svg { /* Target the SVG directly */
+    width: 1em; /* Use font size */
+    height: 1em; /* Use font size */
 }
 button.icon-btn:hover {
-    color: var(--text-color);
+    color: var(--text-color); /* Use Jet on hover */
 }
 
 #volume-slider {
@@ -176,7 +202,7 @@ button.icon-btn:hover {
     -webkit-appearance: none;
     width: 80px; /* Adjust width */
     height: 6px; /* Slider track height */
-    background: var(--light-gray); /* Track color */
+    background: var(--border-color);
     border-radius: 3px;
     outline: none;
     cursor: pointer;
@@ -191,7 +217,7 @@ button.icon-btn:hover {
     appearance: none;
     width: 16px; /* Thumb width */
     height: 16px; /* Thumb height */
-    background: var(--primary-color); /* Thumb color */
+    background: var(--accent-color); /* Use Forest Green */
     border-radius: 50%; /* Circular thumb */
     cursor: pointer;
 }
@@ -200,7 +226,7 @@ button.icon-btn:hover {
 #volume-slider::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: var(--primary-color);
+    background: var(--accent-color); /* Use Forest Green */
     border-radius: 50%;
     cursor: pointer;
     border: none; /* Remove Firefox default border */
@@ -217,17 +243,19 @@ button.icon-btn:hover {
 
 #custom-time {
     padding: 8px 12px;
-    border: 1px solid var(--medium-gray);
+    border: 1px solid var(--border-color);
     border-radius: var(--input-radius);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    width: 70px; 
+    width: 70px;
     text-align: center;
     transition: var(--transition);
     margin: 0;
     line-height: 1.4;
-    background-color: var(--background-color);
-    appearance: textfield; /* Try to remove arrows */
-    -moz-appearance: textfield; /* Firefox */
+    background-color: var(--card-background);
+    color: var(--text-color);
+    appearance: textfield;
+    -moz-appearance: textfield;
 }
 
 /* Hide number input arrows (spinners) */
@@ -238,26 +266,35 @@ button.icon-btn:hover {
 }
 
 #custom-time::placeholder {
-    color: var(--dark-gray);
+    color: var(--text-secondary);
 }
 
 #custom-time:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3); /* Orange focus */
+    box-shadow: 0 0 0 2px rgba(255, 188, 45, 0.3);
 }
 
 #custom-time:disabled {
-    background-color: var(--subtle-bg); /* Use subtle bg */
+    background-color: var(--subtle-bg);
+    color: var(--text-secondary);
     cursor: not-allowed;
+}
+
+/* Style for when timer is active */
+#session-description.timer-active-style {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    color: var(--text-secondary); /* Make text dimmer when crossed out */
 }
 
 /* Preset Button Style Update */
 .preset-btn {
-    background-color: var(--subtle-bg);
-    border: 1px solid var(--medium-gray);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--input-radius);
     padding: 8px 16px;
+    font-family: var(--font-body);
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--text-secondary);
@@ -267,15 +304,15 @@ button.icon-btn:hover {
 }
 
 .preset-btn:hover {
-    background-color: var(--light-gray);
-    border-color: var(--dark-gray);
+    background-color: var(--subtle-bg);
+    border-color: var(--secondary-color);
     color: var(--text-color);
 }
 
 .preset-btn.active {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
+    background-color: var(--accent-color); /* Use Forest Green */
+    border-color: var(--accent-color); /* Use Forest Green */
+    color: var(--color-white); /* Use White text */
     box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
@@ -296,32 +333,34 @@ button.icon-btn:hover {
 
 #session-description {
     width: 100%;
-    padding: 10px 5px; /* Adjusted padding */
-    border: none; /* Remove existing border */
-    border-bottom: 1px solid var(--medium-gray); /* Add only bottom border */
-    border-radius: 0; /* Remove border radius */
-    font-size: 1.1rem; /* Increased font size */
+    padding: 10px 5px;
+    border: none;
+    border-bottom: 1px solid var(--medium-gray);
+    border-radius: 0;
+    font-family: var(--font-body);
+    font-size: 1.1rem;
     transition: var(--transition);
-    background-color: transparent; /* Make background transparent */
+    background-color: transparent;
+    color: var(--text-color);
     line-height: 1.5;
-    text-align: center; /* Center text */
+    text-align: center;
 }
 
 #session-description::placeholder {
-    color: var(--dark-gray);
-    text-align: center; /* Center placeholder too */
+    color: var(--text-secondary);
+    text-align: center;
 }
 
 #session-description:focus {
     outline: none;
-    border-bottom-color: var(--primary-color); /* Change only bottom border color on focus */
-    box-shadow: none; /* Remove focus box-shadow */
+    border-bottom-color: var(--primary-color);
+    box-shadow: none;
 }
 
 #session-description:disabled {
-    background-color: transparent; /* Keep transparent */
-    color: var(--dark-gray); /* Dim text color */
-    border-bottom-style: dashed; /* Indicate disabled state */
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-bottom-style: dashed;
     cursor: not-allowed;
 }
 
@@ -336,9 +375,10 @@ button.icon-btn:hover {
 
 /* --- Button Style Overhaul --- */
 button {
-    padding: 10px 22px; /* Slightly more horizontal padding */
+    padding: 10px 22px;
     border-radius: var(--input-radius);
     border: 1px solid transparent;
+    font-family: var(--font-body);
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
@@ -349,66 +389,68 @@ button {
     gap: 6px;
     background-color: transparent;
     color: var(--text-color);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03); /* Subtle shadow */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
-/* Primary Button Style (Orange, Filled, Subtle Gradient/Shadow) */
+/* Primary Button Style (Green Background, White Text) */
 button.primary {
-    background-color: var(--primary-color);
-    /* Optional: Add a subtle gradient */
-    /* background-image: linear-gradient(to bottom, #F97316, #EA580C); */
-    border-color: var(--primary-color);
-    color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.1); /* Subtle inner top highlight */
+    background-color: var(--accent-color); /* Forest Green */
+    border-color: var(--accent-color); /* Forest Green */
+    color: var(--color-white); /* White Text */
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1), inset 0 -1px 1px rgba(0,0,0,0.15);
 }
 
+/* Apply secondary hover style to primary hover */
 button.primary:hover {
-    background-color: var(--primary-hover);
-    border-color: var(--primary-hover);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Remove inset shadow on hover */
+    border-color: var(--text-secondary); /* Walnut */
+    background-color: var(--subtle-bg); /* Subtle Isabelline */
+    color: var(--text-color); /* Jet */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Secondary Button Style (Gray, Outlined) */
+/* Secondary Button Style (White background, Dun border) */
 button.secondary {
-    background-color: var(--background-color);
-    border-color: var(--medium-gray);
+    background-color: var(--card-background);
+    border-color: var(--secondary-color);
     color: var(--text-secondary);
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 button.secondary:hover {
-    border-color: var(--secondary-color);
     background-color: var(--subtle-bg);
+    border-color: var(--text-secondary);
     color: var(--text-color);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Slightly stronger shadow */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Success Button Style (Green, Outlined/Subtle?) */
+/* Success Button Style (Keep green for now, maybe subtle background) */
 button.success {
-    background-color: var(--background-color);
+    background-color: var(--card-background);
     border-color: var(--success-color);
     color: var(--success-color);
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 button.success:hover {
-    background-color: #ECFDF5; /* Subtle green bg */
-    border-color: #059669; /* Darker emerald */
+    background-color: #ECFDF5;
+    border-color: #059669;
+    color: #047857;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Danger Button Style (Red Text/Subtle) */
+/* Danger Button Style (Subtle Red Text) */
 button.danger {
     background-color: transparent;
     border-color: transparent;
     color: var(--danger-color);
     padding: 6px 10px;
-    box-shadow: none; /* No shadow for text-like button */
+    box-shadow: none;
 }
 
 button.danger:hover {
-    background-color: #FEF2F2; /* Subtle red bg */
-    color: #B91C1C; /* Darker red */
+    background-color: #FEF2F2;
+    color: #B91C1C;
     box-shadow: none;
 }
 
@@ -445,12 +487,13 @@ button:disabled {
     justify-content: flex-end;
 }
 
-/* Filter Tag Button Style */
+/* Filter Tag Button Style (Pill shape, subtle) */
 .filter-tag-btn {
-    background-color: var(--subtle-bg);
-    border: 1px solid var(--light-gray);
-    border-radius: 15px; /* Pill shape */
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
     padding: 4px 12px;
+    font-family: var(--font-body);
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--text-secondary);
@@ -460,15 +503,15 @@ button:disabled {
 }
 
 .filter-tag-btn:hover {
-    background-color: var(--light-gray);
-    border-color: var(--medium-gray);
+    background-color: var(--subtle-bg);
+    border-color: var(--secondary-color);
     color: var(--text-color);
 }
 
 .filter-tag-btn.active {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
+    background-color: var(--accent-color); /* Use Forest Green */
+    border-color: var(--accent-color); /* Use Forest Green */
+    color: var(--color-white); /* White text */
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
@@ -485,8 +528,8 @@ button:disabled {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0; /* Increased padding */
-    border-bottom: 1px solid var(--light-gray);
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
 }
 
@@ -501,52 +544,70 @@ button:disabled {
 
 .task-description {
     font-weight: 500;
-    margin-bottom: 6px; /* Increased spacing */
+    margin-bottom: 6px;
     color: var(--text-color);
 }
 
-/* History Tag Style */
+/* History Tag Style (Subtle background, Walnut text) */
 .task-tag {
     display: inline-block;
-    background-color: #FEF3C7; /* Lighter Yellow/Orange for tags */
-    color: #D97706; /* Darker Amber */
+    background-color: var(--subtle-bg);
+    color: var(--text-secondary);
     padding: 3px 10px;
-    border-radius: 15px; /* Pill shape */
+    border-radius: 15px;
+    font-family: var(--font-body);
     font-size: 0.75rem;
     font-weight: 500;
     margin-right: 8px;
-    margin-bottom: 4px; /* Add bottom margin for wrapping */
-    cursor: pointer; /* Make tags clickable */
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+.task-tag:hover {
+    background-color: var(--secondary-color);
+    color: var(--color-white);
 }
 
 .task-meta {
+    font-family: var(--font-body);
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
 .task-meta .duration-time {
-    /* Style specifically if needed */
-    margin-left: 2px; /* Add slight space if tags exist */
+    margin-left: 2px;
 }
 
 .no-tasks {
     text-align: center;
     color: var(--text-secondary);
-    padding: 40px 20px; /* More padding */
-    font-style: normal; /* Less italic */
+    padding: 40px 20px;
+    font-style: normal;
 }
 
 /* Version Display Styling */
 .app-version {
-    position: absolute;
-    top: 10px;
-    right: 15px;
     font-size: 0.75rem;
-    color: var(--dark-gray);
-    background-color: var(--subtle-bg);
+    color: var(--text-secondary); /* Walnut */
+    background-color: var(--card-background); /* White */
     padding: 2px 6px;
     border-radius: 4px;
-    z-index: 10; /* Ensure it's above other elements if needed */
+    border: 1px solid var(--border-color); /* Add subtle border */
+    margin-bottom: 5px; /* Add space below version */
+}
+
+/* Container for Version and Clear Button */
+.top-right-controls {
+    position: absolute;
+    top: 15px; 
+    right: 15px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.top-right-controls #clear-history-btn {
+    /* Danger small styles already defined */
 }
 
 /* Responsive adjustments */
@@ -607,13 +668,13 @@ button:disabled {
 
     .timer-controls {
         margin-top: 20px;
-        flex-direction: row; /* Keep row maybe? */
-        flex-wrap: wrap; /* Allow wrapping */
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 10px;
     }
     
     button {
-        padding: 8px 15px; /* Adjust button padding */
+        padding: 8px 15px;
         font-size: 0.9rem;
     }
 
@@ -629,7 +690,7 @@ button:disabled {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 15px; /* Space between add-time and main controls */
+    margin-bottom: 15px;
     width: 100%;
 }
 
@@ -640,13 +701,13 @@ button:disabled {
 
 /* History Metrics Styling */
 #history-metrics {
-    margin-bottom: 25px; /* Space below metrics */
+    margin-bottom: 25px;
     padding: 15px;
-    background-color: var(--subtle-bg);
-    border: 1px solid var(--light-gray);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     display: flex;
-    justify-content: space-around; /* Distribute metrics */
+    justify-content: space-around;
     flex-wrap: wrap;
     gap: 15px;
 }
@@ -657,29 +718,55 @@ button:disabled {
 
 .metric-value {
     display: block;
+    font-family: var(--font-body); /* Use body font */
     font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--primary-color);
+    font-weight: 600; /* Bold */
+    color: var(--accent-color); /* Use Forest Green */
 }
 
 .metric-label {
+    font-family: var(--font-body);
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
+/* NEW: Styles for metric controls (like the checkbox) */
+.metric-controls {
+    display: flex;
+    justify-content: center; /* Center the checkbox */
+    align-items: center;
+    margin-bottom: 15px; /* Space before Daily Totals */
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.metric-controls label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.metric-controls input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    /* Optional: Style checkbox appearance further if needed */
+    accent-color: var(--accent-color); /* Color the checkmark/box */
+}
+
 /* History Date Header Styling */
 .history-date-header {
-    margin-top: 20px; /* Space above date */
+    margin-top: 20px;
     margin-bottom: 8px;
+    font-family: var(--font-body);
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-secondary);
     padding-bottom: 5px;
-    border-bottom: 1px solid var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .history-date-header:first-of-type {
-    margin-top: 0; /* No top margin for the very first header */
+    margin-top: 0;
 }
 
 .history-list {
@@ -688,50 +775,47 @@ button:disabled {
 
 /* --- Preset Tags Styling --- */
 .preset-tags-container {
-    margin-top: 12px; /* Space above the tags */
+    margin-top: 12px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    justify-content: center; /* Center the buttons horizontally */
+    justify-content: center;
 }
-
-/* .preset-tags-label {  <-- No longer needed */
-/*    font-size: 0.85rem; */
-/*    color: var(--text-secondary); */
-/*    margin-right: 4px; */
-/*    font-weight: 500; */
-/* } */
 
 button.preset-tag-btn {
     padding: 4px 10px;
+    font-family: var(--font-body);
     font-size: 0.8rem;
-    border: 1px solid var(--medium-gray);
-    background-color: var(--background-color);
-    color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+    background-color: var(--card-background);
+    color: var(--text-secondary);
     border-radius: 4px;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: none; /* Override default button styles */
+    box-shadow: none;
 }
 
 button.preset-tag-btn:hover {
-    border-color: var(--primary-color);
-    background-color: #FFF7ED; /* Light orange background */
-    color: var(--primary-hover);
+    border-color: var(--accent-color); /* Forest Green border */
+    background-color: var(--subtle-bg); /* Subtle Isabelline bg */
+    color: var(--accent-color); /* Forest Green text */
 }
 
 
 /* --- Day Tracking View Styling --- */
 .day-tracking-view {
-    margin-top: 20px; /* Space above this view */
-    padding-top: 20px; /* Space below metrics/header */
-    border-top: 1px dashed var(--light-gray); /* Subtle separator */
+    margin-top: 25px; 
+    margin-bottom: 25px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-background);
     width: 100%;
 }
 
 .view-title {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 15px;
@@ -741,8 +825,8 @@ button.preset-tag-btn:hover {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 200px; /* Limit height and make scrollable */
-    overflow-y: auto; /* Add scroll if content exceeds max-height */
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .daily-totals-list li {
@@ -750,8 +834,9 @@ button.preset-tag-btn:hover {
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    border-bottom: 1px solid var(--subtle-bg); /* Very light line between days */
+    border-bottom: 1px solid var(--subtle-bg);
 }
 
 .daily-totals-list li:last-child {
@@ -782,8 +867,8 @@ button.preset-tag-btn:hover {
 
 /* --- History Item Delete Button --- */
 .history-item {
-    position: relative; /* Needed for absolute positioning of the button */
-    padding-right: 35px; /* Add padding to prevent content overlap */
+    position: relative;
+    padding-right: 35px;
 }
 
 .delete-history-item-btn {
@@ -793,17 +878,17 @@ button.preset-tag-btn:hover {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: var(--medium-gray); /* Subtle initial color */
-    font-size: 1.5rem; /* Make the '×' larger */
-    font-weight: 300; /* Lighter weight for the cross */
+    color: var(--secondary-color);
+    font-size: 1.5rem;
+    font-weight: 300;
     line-height: 1;
     padding: 2px 5px;
     cursor: pointer;
     transition: color 0.2s ease;
-    box-shadow: none; /* Override general button styles */
+    box-shadow: none;
 }
 
 .delete-history-item-btn:hover {
-    color: var(--danger-color); /* Red on hover */
-    background-color: transparent; /* Ensure no background on hover */
+    color: var(--danger-color);
+    background-color: transparent;
 } 
