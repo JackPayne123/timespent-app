@@ -1,43 +1,44 @@
 :root {
-    /* Applica-Inspired Palette */
-    --color-amber: #FFBC2D;
-    --color-dun: #BEBAAC;
-    --color-walnut: #6C5F54;
-    --color-isabelline: #F3F2EE;
-    --color-cafe: #473729;
-    --color-jet: #302F2B;
+    /* Attio-Inspired Minimalist Palette */
     --color-white: #FFFFFF;
-    --color-forest-green: #006400; /* Added Forest Green */
+    --color-black: #111827; /* Dark Gray/Near Black */
+    --color-gray-50: #F9FAFB;  /* Very Light Gray */
+    --color-gray-100: #F3F4F6; /* Light Gray */
+    --color-gray-200: #E5E7EB; /* Light Gray+ */
+    --color-gray-400: #9CA3AF; /* Medium Gray */
+    --color-gray-500: #6B7280; /* Medium Gray+ */
+    --color-gray-700: #374151; /* Dark Gray */
+    --color-gray-900: #111827; /* Near Black */
 
     /* Semantic Colors */
-    --primary-color: var(--color-amber); /* Amber for primary actions */
-    --primary-hover: #e6a928; /* Darker Amber */
-    --secondary-color: var(--color-dun); /* Dun for secondary elements/borders */
-    --accent-color: var(--color-forest-green); /* Forest Green for accents */
-    --background-color: var(--color-isabelline); /* Isabelline for main background */
-    --card-background: var(--color-white); /* White for card backgrounds */
-    --text-color: var(--color-jet); /* Jet for primary text */
-    --text-secondary: var(--color-walnut); /* Walnut for secondary text */
-    --subtle-bg: #fcfbfa; /* Even Lighter Isabelline for subtle backgrounds */
-    --light-gray: #e0deda; /* Derived from Isabelline/Dun mix for light borders */
-    --medium-gray: var(--color-dun); /* Dun as medium gray */
-    --dark-gray: var(--color-walnut); /* Walnut as dark gray */
-    --border-color: #e0deda; /* Default border color */
-    
-    --success-color: #10B981; /* Keep Emerald for success */
+    --primary-color: var(--color-black); /* Primary actions */
+    --primary-hover: var(--color-gray-700); /* Slightly lighter black */
+    --secondary-color: var(--color-gray-200); /* Borders, secondary elements */
+    --accent-color: var(--color-black); /* Keep it simple, use primary */
+    --background-color: var(--color-white); /* Main background */
+    --card-background: var(--color-white); /* Card backgrounds */
+    --text-color: var(--color-gray-900); /* Primary text */
+    --text-secondary: var(--color-gray-500); /* Secondary text */
+    --subtle-bg: var(--color-gray-50); /* Subtle backgrounds */
+    --light-gray: var(--color-gray-200); /* Light borders */
+    --medium-gray: var(--color-gray-400); /* Medium gray */
+    --dark-gray: var(--color-gray-700); /* Dark gray */
+    --border-color: var(--color-gray-200); /* Default border color */
+
+    --success-color: #10B981; /* Keep Green for success */
     --danger-color: #EF4444; /* Keep Red for danger */
-    
-    /* Reset shadows - less emphasis (keep from previous) */
-    --shadow: none;
-    --shadow-lg: none;
-    --shadow-md: none;
+
+    /* Reset shadows - more subtle */
+    --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     /* Fonts */
-    --font-heading: 'Playfair Display', serif;
+    --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Changed to Inter */
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    
-    --border-radius: 8px; /* Keep */
-    --input-radius: 6px; /* Keep */
+
+    --border-radius: 6px; /* Slightly reduced radius */
+    --input-radius: 4px; /* Slightly reduced radius */
     --transition: all 0.2s ease-in-out;
     --font-family: var(--font-body); /* Set default body font */
 }
@@ -62,6 +63,12 @@ body {
     flex-direction: column;
     align-items: center;
     padding-top: 60px; /* Increased top padding */
+
+    /* Subtle grid background 
+    background-image: linear-gradient(to right, var(--color-gray-50) 1px, transparent 1px),
+                      linear-gradient(to bottom, var(--color-gray-50) 1px, transparent 1px);
+    background-size: 10px 10px; /* Adjust size of grid squares */
+    
 }
 
 .app-container {
@@ -75,7 +82,7 @@ header {
     text-align: center;
     margin-bottom: 50px; /* Increased margin */
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
 }
 
 header h1 {
@@ -105,9 +112,9 @@ header h1 {
     padding: 0; /* Remove padding */
     box-shadow: none; /* Remove shadow */
     width: 100%;
-    /* Add bottom border for separation */
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 40px; /* Space below the border */
+    /* Add bottom border for separation - REMOVED */
+    /* border-bottom: 1px solid var(--border-color); */
+    padding-bottom: 40px; /* Space below the section */
 }
 
 /* Remove border from last section */
@@ -158,12 +165,17 @@ header h1 {
 
 #time-display {
     font-family: var(--font-body);
-    font-size: 6rem;
+    font-size: 8rem; /* Significantly larger */
     font-weight: 500;
     color: var(--text-color);
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    margin-bottom: 0; /* Remove bottom margin as spacing handled by parent */
+    margin-bottom: 0;
+    /* transition: all 0.1s ease-out; Optional subtle transition */
+}
+
+#time-display.pulsing {
+    animation: pulse-timer 0.3s ease-in-out;
 }
 
 /* Volume Controls Styling */
@@ -180,7 +192,7 @@ button.icon-btn {
     background: none;
     border: none;
     font-size: 1.2rem; /* Adjust size slightly for SVG */
-    color: var(--text-secondary); /* Use Walnut */
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 5px;
     line-height: 1;
@@ -194,7 +206,7 @@ button.icon-btn svg { /* Target the SVG directly */
     height: 1em; /* Use font size */
 }
 button.icon-btn:hover {
-    color: var(--text-color); /* Use Jet on hover */
+    color: var(--text-color);
 }
 
 #volume-slider {
@@ -217,7 +229,7 @@ button.icon-btn:hover {
     appearance: none;
     width: 16px; /* Thumb width */
     height: 16px; /* Thumb height */
-    background: var(--accent-color); /* Use Forest Green */
+    background: var(--primary-color);
     border-radius: 50%; /* Circular thumb */
     cursor: pointer;
 }
@@ -226,7 +238,7 @@ button.icon-btn:hover {
 #volume-slider::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: var(--accent-color); /* Use Forest Green */
+    background: var(--primary-color);
     border-radius: 50%;
     cursor: pointer;
     border: none; /* Remove Firefox default border */
@@ -238,7 +250,7 @@ button.icon-btn:hover {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px; /* Increased gap */
+    gap: 10px; /* Slightly reduced gap */
 }
 
 #custom-time {
@@ -252,7 +264,7 @@ button.icon-btn:hover {
     transition: var(--transition);
     margin: 0;
     line-height: 1.4;
-    background-color: var(--card-background);
+    background-color: var(--subtle-bg); /* Light background */
     color: var(--text-color);
     appearance: textfield;
     -moz-appearance: textfield;
@@ -272,7 +284,7 @@ button.icon-btn:hover {
 #custom-time:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(255, 188, 45, 0.3);
+    box-shadow: 0 0 0 2px var(--color-gray-200);
 }
 
 #custom-time:disabled {
@@ -285,7 +297,7 @@ button.icon-btn:hover {
 #session-description.timer-active-style {
     text-decoration: line-through;
     text-decoration-thickness: 1px;
-    color: var(--text-secondary); /* Make text dimmer when crossed out */
+    color: var(--text-secondary);
 }
 
 /* Preset Button Style Update */
@@ -297,23 +309,23 @@ button.icon-btn:hover {
     font-family: var(--font-body);
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-color);
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    box-shadow: var(--shadow);
 }
 
 .preset-btn:hover {
     background-color: var(--subtle-bg);
-    border-color: var(--secondary-color);
+    border-color: var(--medium-gray);
     color: var(--text-color);
 }
 
 .preset-btn.active {
-    background-color: var(--accent-color); /* Use Forest Green */
-    border-color: var(--accent-color); /* Use Forest Green */
-    color: var(--color-white); /* Use White text */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.1);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--color-white);
+    box-shadow: var(--shadow), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
 .preset-btn:disabled {
@@ -324,23 +336,22 @@ button.icon-btn:hover {
 /* Session Description Input */
 .session-description-container {
     width: 100%;
-    max-width: 450px; 
+    max-width: 450px;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    margin-top: 15px; /* Adjusted margin */
+    margin-top: 20px; /* Increased margin */
 }
 
 #session-description {
     width: 100%;
-    padding: 10px 5px;
-    border: none;
-    border-bottom: 1px solid var(--medium-gray);
-    border-radius: 0;
+    padding: 10px 15px; /* Adjusted padding */
+    border: 1px solid var(--border-color); /* Standard border */
+    border-radius: var(--input-radius); /* Standard radius */
     font-family: var(--font-body);
-    font-size: 1.1rem;
+    font-size: 1rem; /* Slightly smaller */
     transition: var(--transition);
-    background-color: transparent;
+    background-color: var(--subtle-bg); /* Light background */
     color: var(--text-color);
     line-height: 1.5;
     text-align: center;
@@ -353,14 +364,15 @@ button.icon-btn:hover {
 
 #session-description:focus {
     outline: none;
-    border-bottom-color: var(--primary-color);
-    box-shadow: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--color-gray-200); /* Consistent focus */
 }
 
 #session-description:disabled {
-    background-color: transparent;
+    background-color: var(--subtle-bg); /* Keep subtle bg */
     color: var(--text-secondary);
-    border-bottom-style: dashed;
+    border-color: var(--border-color);
+    border-style: solid; /* No longer dashed */
     cursor: not-allowed;
 }
 
@@ -389,39 +401,39 @@ button {
     gap: 6px;
     background-color: transparent;
     color: var(--text-color);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    box-shadow: var(--shadow);
 }
 
-/* Primary Button Style (Green Background, White Text) */
+/* Primary Button Style (Black Background, White Text) */
 button.primary {
-    background-color: var(--accent-color); /* Forest Green */
-    border-color: var(--accent-color); /* Forest Green */
-    color: var(--color-white); /* White Text */
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--color-white);
     font-weight: 600;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1), inset 0 -1px 1px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow);
 }
 
-/* Apply secondary hover style to primary hover */
+/* Hover for Primary Button */
 button.primary:hover {
-    border-color: var(--text-secondary); /* Walnut */
-    background-color: var(--subtle-bg); /* Subtle Isabelline */
-    color: var(--text-color); /* Jet */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--color-white);
+    box-shadow: var(--shadow-md);
 }
 
-/* Secondary Button Style (White background, Dun border) */
+/* Secondary Button Style (White background, Light Gray border) */
 button.secondary {
     background-color: var(--card-background);
-    border-color: var(--secondary-color);
-    color: var(--text-secondary);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    box-shadow: var(--shadow);
 }
 
 button.secondary:hover {
     background-color: var(--subtle-bg);
-    border-color: var(--text-secondary);
+    border-color: var(--medium-gray);
     color: var(--text-color);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-md);
 }
 
 /* Success Button Style (Keep green for now, maybe subtle background) */
@@ -429,14 +441,14 @@ button.success {
     background-color: var(--card-background);
     border-color: var(--success-color);
     color: var(--success-color);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    box-shadow: var(--shadow);
 }
 
 button.success:hover {
     background-color: #ECFDF5;
     border-color: #059669;
     color: #047857;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-md);
 }
 
 /* Danger Button Style (Subtle Red Text) */
@@ -489,30 +501,30 @@ button:disabled {
 
 /* Filter Tag Button Style (Pill shape, subtle) */
 .filter-tag-btn {
-    background-color: var(--card-background);
+    background-color: var(--subtle-bg); /* Subtle background */
     border: 1px solid var(--border-color);
     border-radius: 15px;
     padding: 4px 12px;
     font-family: var(--font-body);
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-secondary); /* Secondary text color */
     cursor: pointer;
     transition: var(--transition);
     box-shadow: none;
 }
 
 .filter-tag-btn:hover {
-    background-color: var(--subtle-bg);
-    border-color: var(--secondary-color);
+    background-color: var(--color-gray-100); /* Slightly darker hover */
+    border-color: var(--medium-gray);
     color: var(--text-color);
 }
 
 .filter-tag-btn.active {
-    background-color: var(--accent-color); /* Use Forest Green */
-    border-color: var(--accent-color); /* Use Forest Green */
-    color: var(--color-white); /* White text */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--color-white);
+    box-shadow: none; /* No shadow */
 }
 
 .history-list {
@@ -529,8 +541,10 @@ button:disabled {
     justify-content: space-between;
     align-items: center;
     padding: 15px 0;
-    border-bottom: 1px solid var(--border-color);
+    /* border-bottom: 1px solid var(--border-color); REMOVED - Rely on spacing */
     transition: background-color 0.15s ease;
+    padding-right: 35px; /* Keep space for delete button */
+    position: relative;
 }
 
 .history-item:last-child {
@@ -551,20 +565,21 @@ button:disabled {
 /* History Tag Style (Subtle background, Walnut text) */
 .task-tag {
     display: inline-block;
-    background-color: var(--subtle-bg);
-    color: var(--text-secondary);
-    padding: 3px 10px;
-    border-radius: 15px;
+    background-color: var(--subtle-bg); /* Subtle background */
+    color: var(--text-secondary); /* Secondary text */
+    padding: 2px 8px; /* Slightly smaller padding */
+    border-radius: 4px; /* Smaller radius */
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* Smaller font */
     font-weight: 500;
-    margin-right: 8px;
+    margin-right: 6px; /* Adjust margin */
     margin-bottom: 4px;
     cursor: pointer;
+    border: 1px solid transparent; /* Add transparent border for consistent height */
 }
 .task-tag:hover {
-    background-color: var(--secondary-color);
-    color: var(--color-white);
+    background-color: var(--color-gray-100); /* Slightly darker hover */
+    color: var(--text-color);
 }
 
 .task-meta {
@@ -587,27 +602,63 @@ button:disabled {
 /* Version Display Styling */
 .app-version {
     font-size: 0.75rem;
-    color: var(--text-secondary); /* Walnut */
-    background-color: var(--card-background); /* White */
+    color: var(--text-secondary);
+    background-color: var(--card-background);
     padding: 2px 6px;
     border-radius: 4px;
-    border: 1px solid var(--border-color); /* Add subtle border */
+    border: 1px solid var(--border-color);
     margin-bottom: 5px; /* Add space below version */
 }
 
 /* Container for Version and Clear Button */
 .top-right-controls {
     position: absolute;
-    top: 15px; 
+    top: 15px;
     right: 15px;
     z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    gap: 8px; /* Add gap between items */
 }
 
 .top-right-controls #clear-history-btn {
     /* Danger small styles already defined */
+}
+
+.daily-goal-setting {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.daily-goal-setting label {
+    font-weight: 500;
+}
+
+.daily-goal-setting input[type="number"] {
+    width: 55px; /* Adjust width */
+    padding: 3px 6px;
+    font-size: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--input-radius);
+    background-color: var(--card-background);
+    color: var(--text-color);
+    text-align: right;
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+.daily-goal-setting input[type="number"]::-webkit-outer-spin-button,
+.daily-goal-setting input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.daily-goal-setting input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--color-gray-200);
 }
 
 /* Responsive adjustments */
@@ -718,10 +769,10 @@ button:disabled {
 
 .metric-value {
     display: block;
-    font-family: var(--font-body); /* Use body font */
+    font-family: var(--font-body);
     font-size: 1.4rem;
-    font-weight: 600; /* Bold */
-    color: var(--accent-color); /* Use Forest Green */
+    font-weight: 600;
+    color: var(--text-color);
 }
 
 .metric-label {
@@ -733,9 +784,9 @@ button:disabled {
 /* NEW: Styles for metric controls (like the checkbox) */
 .metric-controls {
     display: flex;
-    justify-content: center; /* Center the checkbox */
+    justify-content: center;
     align-items: center;
-    margin-bottom: 15px; /* Space before Daily Totals */
+    margin-bottom: 15px;
     font-size: 0.9rem;
     color: var(--text-secondary);
 }
@@ -749,8 +800,7 @@ button:disabled {
 .metric-controls input[type="checkbox"] {
     margin-right: 8px;
     cursor: pointer;
-    /* Optional: Style checkbox appearance further if needed */
-    accent-color: var(--accent-color); /* Color the checkmark/box */
+    accent-color: var(--primary-color);
 }
 
 /* History Date Header Styling */
@@ -775,10 +825,10 @@ button:disabled {
 
 /* --- Preset Tags Styling --- */
 .preset-tags-container {
-    margin-top: 12px;
+    margin-top: 10px; /* Reduced margin */
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px; /* Reduced gap */
     align-items: center;
     justify-content: center;
 }
@@ -787,9 +837,9 @@ button.preset-tag-btn {
     padding: 4px 10px;
     font-family: var(--font-body);
     font-size: 0.8rem;
-    border: 1px solid var(--secondary-color);
-    background-color: var(--card-background);
-    color: var(--text-secondary);
+    border: 1px solid var(--border-color); /* Subtle border */
+    background-color: var(--subtle-bg); /* Subtle background */
+    color: var(--text-secondary); /* Secondary text */
     border-radius: 4px;
     cursor: pointer;
     transition: var(--transition);
@@ -797,9 +847,9 @@ button.preset-tag-btn {
 }
 
 button.preset-tag-btn:hover {
-    border-color: var(--accent-color); /* Forest Green border */
-    background-color: var(--subtle-bg); /* Subtle Isabelline bg */
-    color: var(--accent-color); /* Forest Green text */
+    border-color: var(--medium-gray); /* Darker border on hover */
+    background-color: var(--color-gray-100); /* Slightly darker bg */
+    color: var(--text-color); /* Primary text on hover */
 }
 
 
@@ -878,7 +928,7 @@ button.preset-tag-btn:hover {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: var(--secondary-color);
+    color: var(--medium-gray);
     font-size: 1.5rem;
     font-weight: 300;
     line-height: 1;
@@ -891,4 +941,50 @@ button.preset-tag-btn:hover {
 .delete-history-item-btn:hover {
     color: var(--danger-color);
     background-color: transparent;
+} 
+
+@keyframes pulse-timer {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.98; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* --- Progress Bar Styling --- */
+.progress-bar-container {
+    width: 100%;
+    max-width: 400px; /* Limit width */
+    margin: 25px auto 0; /* Add space above */
+    padding: 10px 15px;
+    background-color: var(--color-gray-700); /* Dark background like example */
+    border-radius: 20px; /* Highly rounded */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-gray-200); /* Light text */
+    margin-bottom: 8px;
+    padding: 0 5px; /* Align text slightly inset */
+}
+
+.progress-track {
+    width: 100%;
+    height: 10px; /* Height of the bar */
+    background-color: var(--color-gray-500); /* Track color */
+    border-radius: 10px; /* Match container rounding */
+    overflow: hidden; /* Keep fill inside */
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--color-white); /* Fill color */
+    border-radius: 10px; /* Match container rounding */
+    transition: width 0.3s ease-out; /* Smooth animation */
+    position: absolute;
+    left: 0;
+    top: 0;
 } 

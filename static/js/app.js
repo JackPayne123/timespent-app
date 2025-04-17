@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         history: [],
         activeFilterTag: null,
         volume: 0.5,
-        includeBreaksInMetrics: true // NEW: State for break toggle
+        includeBreaksInMetrics: true, // NEW: State for break toggle
+        dailyGoalMinutes: 120 // Default goal: 2 hours
     };
 
     const MAX_MINUTES = 180; 
@@ -54,7 +55,14 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeSlider: document.getElementById('volume-slider'), // Slider input
         presetTagsContainer: document.getElementById('preset-tags-container'), // For preset tag buttons
         dayTrackingViewContainer: document.getElementById('day-tracking-view'), // For daily summary view
-        includeBreaksToggle: document.getElementById('include-breaks-toggle') // NEW: Checkbox element
+        includeBreaksToggle: document.getElementById('include-breaks-toggle'), // NEW: Checkbox element
+        // New progress bar elements
+        dailyProgressContainer: document.getElementById('daily-progress-container'),
+        progressLabelLeft: document.getElementById('progress-label-left'),
+        progressLabelRight: document.getElementById('progress-label-right'),
+        progressFill: document.getElementById('progress-fill'),
+        // New goal input element
+        dailyGoalInput: document.getElementById('daily-goal-input')
     };
 
     // --- Worker Message Handling ---
@@ -68,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     state.currentDisplayMinutes = minutes;
                     state.currentDisplaySeconds = seconds;
                     updateCountdownDisplay(); // Update UI with received time
+                    // Add pulse animation briefly
+                    elements.timeDisplay.classList.add('pulsing');
+                    setTimeout(() => elements.timeDisplay.classList.remove('pulsing'), 300); // Match CSS animation duration
                     break;
                 case 'playSound':
                     playSound();
@@ -136,6 +147,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         elements.volumeSlider.value = state.volume; // Set slider position
 
+        // Load daily goal from localStorage
+        const savedGoal = localStorage.getItem('timeSpent_dailyGoal');
+        if (savedGoal !== null) {
+            state.dailyGoalMinutes = parseInt(savedGoal);
+        }
+        elements.dailyGoalInput.value = state.dailyGoalMinutes; // Set input value
+
         // NEW: Load break toggle state from localStorage
         const savedIncludeBreaks = localStorage.getItem('timeSpent_includeBreaks');
         if (savedIncludeBreaks !== null) {
@@ -148,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCountdownDisplay();
         setupEventListeners();
         updateButtonStates();
+        updateDailyProgress(); // Initial update
         // Keep slider hidden initially
         elements.volumeSlider.classList.add('hidden');
     }
@@ -187,6 +206,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // NEW: Listener for the break toggle checkbox
         elements.includeBreaksToggle.addEventListener('change', handleBreakToggleChange);
+
+        // NEW: Listener for daily goal input
+        elements.dailyGoalInput.addEventListener('input', handleGoalInputChange);
     }
 
     // Update Button Visibility and Text based on State
@@ -424,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!elements.historyList || !elements.historyMetricsContainer) return;
 
         // 1. Render Filter Tags (independent of filtering)
-        renderFilterTags();
+        renderFilterTags(); // <<< UNCOMMENT to re-enable filter tags
 
         // 2. Filter History based on active tag
         let filteredHistory = state.activeFilterTag
@@ -481,6 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Still render day tracking and preset tags even if history list is empty
             renderDayTrackingView(historyForMetrics); // Pass historyForMetrics to day tracking
             renderPresetTags(); 
+            updateDailyProgress(); // Update progress even if list is empty
             return; 
         }
 
@@ -583,7 +606,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 7. Render Preset Tags (based on full history - or maybe filtered?)
         // Let's keep preset tags based on full history for now
-        renderPresetTags(); 
+        renderPresetTags();
+        updateDailyProgress(); // Update progress after history render
     }
 
     function renderFilterTags() {
@@ -620,6 +644,9 @@ document.addEventListener('DOMContentLoaded', function() {
             tagButton.addEventListener('click', () => applyHistoryFilter(tag));
             elements.historyFilterTagsContainer.appendChild(tagButton);
         });
+
+        // renderHistory(); // REMOVE THIS - Causes infinite loop
+        // updateDailyProgress(); // REMOVE THIS - Called by renderHistory anyway
     }
 
     function applyHistoryFilter(tag) {
@@ -659,6 +686,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 elements.presetTagsContainer.appendChild(button);
             });
         }
+
+        // Save preference to localStorage
+        localStorage.setItem('timeSpent_includeBreaks', JSON.stringify(state.includeBreaksInMetrics));
+        console.log("Include breaks in metrics:", state.includeBreaksInMetrics);
+        updateDailyProgress(); // Update progress when toggle changes
     }
 
     // MODIFIED: Toggle selected preset tag in description input
@@ -882,6 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     saveHistoryToLocalStorage();
                     // Re-render the history section (will show empty message)
                     renderHistory();
+                    updateDailyProgress(); // Update progress after clearing
                     alert("History cleared successfully.");
                 })
                 .catch(error => {
@@ -913,7 +946,83 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save preference to localStorage
         localStorage.setItem('timeSpent_includeBreaks', JSON.stringify(state.includeBreaksInMetrics));
         console.log("Include breaks in metrics:", state.includeBreaksInMetrics);
-        renderHistory(); // Re-render everything to reflect the change
+        updateDailyProgress(); // Update progress when toggle changes
+    }
+
+    // NEW: Handle Daily Goal Input Change
+    function handleGoalInputChange(event) {
+        let newGoal = parseInt(event.target.value);
+        const minGoal = parseInt(event.target.min) || 15;
+        const maxGoal = parseInt(event.target.max) || 720;
+
+        // Basic validation
+        if (isNaN(newGoal)) {
+             // If input is cleared or invalid, maybe reset to default or previous valid?
+             // For now, let's just use the minimum valid value if NaN
+             newGoal = state.dailyGoalMinutes; // Revert to current state value if input becomes NaN
+        } else {
+            newGoal = Math.max(minGoal, Math.min(maxGoal, newGoal));
+        }
+
+        // Update state only if the validated number is different
+        if (newGoal !== state.dailyGoalMinutes) {
+            state.dailyGoalMinutes = newGoal;
+            localStorage.setItem('timeSpent_dailyGoal', state.dailyGoalMinutes);
+            console.log("Daily goal updated to:", state.dailyGoalMinutes);
+            updateDailyProgress(); // Update the progress bar display
+        }
+         // Update the input value to reflect the validated/constrained value
+        // This handles cases where user types something out of bounds or invalid
+        event.target.value = newGoal;
+    }
+
+    // NEW: Function to update daily progress bar
+    function updateDailyProgress() {
+        if (!elements.dailyProgressContainer) return; // Exit if element doesn't exist
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStartTime = today.getTime();
+        let totalFocusedMinutesToday = 0;
+
+        // Filter history for today and optionally exclude breaks
+        const historyForProgress = state.history.filter(entry => {
+            if (!entry.start_time) return false;
+            const entryDate = new Date(entry.start_time);
+            if (isNaN(entryDate.getTime())) return false;
+            entryDate.setHours(0, 0, 0, 0);
+
+            // Check if it's today
+            if (entryDate.getTime() !== todayStartTime) return false;
+
+            // Check if breaks should be excluded
+            if (!state.includeBreaksInMetrics && entry.tags && entry.tags.includes('break')) {
+                return false;
+            }
+
+            return true;
+        });
+
+        // Sum durations
+        historyForProgress.forEach(entry => {
+            totalFocusedMinutesToday += entry.duration;
+        });
+
+        // Calculate percentage (ensure goal is not zero)
+        const goalMinutes = state.dailyGoalMinutes > 0 ? state.dailyGoalMinutes : 1; // Avoid division by zero
+        const percentage = Math.min(100, Math.max(0, (totalFocusedMinutesToday / goalMinutes) * 100));
+
+        // Update UI Elements
+        elements.progressLabelLeft.textContent = `Focused: ${totalFocusedMinutesToday} / ${state.dailyGoalMinutes} min`;
+        elements.progressLabelRight.textContent = `${Math.round(percentage)}%`;
+        elements.progressFill.style.width = `${percentage}%`;
+
+        // Show/hide the container based on whether there's history or a goal set
+        if (state.history.length > 0 || state.dailyGoalMinutes > 0) {
+             elements.dailyProgressContainer.classList.remove('hidden');
+        } else {
+             elements.dailyProgressContainer.classList.add('hidden');
+        }
     }
 
     // --- Functions Sending Commands to Worker ---
@@ -994,6 +1103,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Re-render everything
             renderHistory(); 
+            updateDailyProgress(); // Update progress after saving
         } else {
              console.log("Completion triggered but no description or duration=0, not saving history.");
         }
@@ -1057,6 +1167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveHistoryToLocalStorage();
                 // Re-render the history section to reflect the change
                 renderHistory(); 
+                updateDailyProgress(); // Update progress after deleting
                 console.log(`Entry ${entryId} removed from local state and UI updated.`);
             } else {
                 console.warn(`Entry ${entryId} not found in local state after successful deletion.`);
