@@ -1,3 +1,13 @@
+@font-face {
+    font-family: 'Geist Sans';
+    src: url('/static/fonts/GeistVariableVF.woff2') format('woff2 supports variations'),
+         url('/static/fonts/GeistVariableVF.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-stretch: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     /* Attio-Inspired Minimalist Palette */
     --color-white: #FFFFFF;
@@ -34,8 +44,8 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     /* Fonts */
-    --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Changed to Inter */
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-heading: 'Geist Sans', sans-serif; /* Changed to Geist Sans */
+    --font-body: 'Geist Sans', sans-serif; /* Changed to Geist Sans */
 
     --border-radius: 6px; /* Slightly reduced radius */
     --input-radius: 4px; /* Slightly reduced radius */
@@ -63,6 +73,9 @@ body {
     flex-direction: column;
     align-items: center;
     padding-top: 60px; /* Increased top padding */
+
+    /* Set global font-family to Geist Sans */
+    font-family: var(--font-body); 
 
     /* Subtle grid background 
     background-image: linear-gradient(to right, var(--color-gray-50) 1px, transparent 1px),
@@ -165,63 +178,31 @@ header h1 {
 
 #time-display {
     font-family: var(--font-body);
-    font-size: 8rem; /* Significantly larger */
-    font-weight: 500;
+    font-size: 18rem; /* Significantly larger */
+    font-weight: 600;
     color: var(--text-color);
     font-variant-numeric: tabular-nums;
     line-height: 1;
     margin-bottom: 0;
     /* transition: all 0.1s ease-out; Optional subtle transition */
 }
-
-#time-display.pulsing {
-    animation: pulse-timer 0.3s ease-in-out;
-}
-
-/* Volume Controls Styling */
-.volume-controls {
-    position: absolute; /* Position relative to timer-display-area */
-    right: 0;
-    top: 0; /* Align top */
-    display: flex;
-    flex-direction: column; /* Stack icon and slider */
-    align-items: flex-end;
-}
-
-button.icon-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem; /* Adjust size slightly for SVG */
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 5px;
-    line-height: 1;
-    box-shadow: none;
-    display: inline-flex; /* Align SVG nicely */
-    align-items: center;
-    justify-content: center;
-}
-button.icon-btn svg { /* Target the SVG directly */
-    width: 1em; /* Use font size */
-    height: 1em; /* Use font size */
-}
-button.icon-btn:hover {
-    color: var(--text-color);
-}
+    
+/* Volume Controls Styling - REMOVED */
+/* .volume-controls { ... } */
 
 #volume-slider {
     appearance: none; /* Override default look */
     -webkit-appearance: none;
-    width: 80px; /* Adjust width */
+    width: 115px; /* Match width approx to goal input + label */
     height: 6px; /* Slider track height */
     background: var(--border-color);
     border-radius: 3px;
     outline: none;
     cursor: pointer;
-    margin-top: 8px; /* Space between icon and slider */
+    display: block; /* Make it a block element */
+    margin-top: 8px; /* Space above the slider */
+    align-self: flex-end; /* Align to the right under the goal */
 }
-/* Remove default hidden style if relying on JS toggle */
-/* #volume-slider.hidden { display: none; } */
 
 /* Styling the slider thumb (Chrome, Safari, Edge) */
 #volume-slider::-webkit-slider-thumb {
@@ -943,48 +924,84 @@ button.preset-tag-btn:hover {
     background-color: transparent;
 } 
 
-@keyframes pulse-timer {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.02); opacity: 0.98; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* --- Progress Bar Styling --- */
-.progress-bar-container {
-    width: 100%;
-    max-width: 400px; /* Limit width */
-    margin: 25px auto 0; /* Add space above */
-    padding: 10px 15px;
-    background-color: var(--color-gray-700); /* Dark background like example */
-    border-radius: 20px; /* Highly rounded */
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.progress-text {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--color-gray-200); /* Light text */
-    margin-bottom: 8px;
-    padding: 0 5px; /* Align text slightly inset */
-}
-
-.progress-track {
-    width: 100%;
-    height: 10px; /* Height of the bar */
-    background-color: var(--color-gray-500); /* Track color */
-    border-radius: 10px; /* Match container rounding */
+/* --- NEW: Vertical Progress Bar Styling --- */
+.vertical-progress-container {
+    position: fixed; /* Fix position relative to viewport */
+    left: 15px; /* Distance from left edge */
+    top: 50%; /* Center vertically */
+    transform: translateY(-50%); /* Adjust for exact centering */
+    width: 8px; /* Thin bar */
+    height: 200px; /* Height of the bar */
+    background-color: var(--color-gray-100); /* Light track background */
+    border-radius: 4px; /* Rounded corners */
     overflow: hidden; /* Keep fill inside */
-    position: relative;
+    z-index: 100; /* Ensure it's above other content if needed */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: var(--shadow);
 }
 
-.progress-fill {
+.vertical-progress-container.hidden {
+    display: none; /* Hide when needed */
+}
+
+.vertical-progress-track {
+    width: 100%;
     height: 100%;
-    background-color: var(--color-white); /* Fill color */
-    border-radius: 10px; /* Match container rounding */
-    transition: width 0.3s ease-out; /* Smooth animation */
+    background-color: var(--color-gray-100); /* Explicit track color */
+    position: relative; /* For positioning the fill */
+    border-radius: 4px;
+}
+
+.vertical-progress-fill {
     position: absolute;
+    bottom: 0; /* Fill starts from the bottom */
     left: 0;
-    top: 0;
+    width: 100%;
+    height: 0%; /* Start with 0 height, controlled by JS */
+    background-color: var(--primary-color); /* Use primary color for fill */
+    border-radius: 4px 4px 0 0; /* Round top corners when filled */
+    transition: height 0.3s ease-out; /* Animate height change */
+}
+
+.vertical-progress-text {
+    position: absolute;
+    bottom: -25px; /* Position text below the bar */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--card-background);
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: var(--shadow);
 } 
+
+/* --- NEW: Daily Dots Tracker Styling --- */
+.daily-dots-tracker {
+    position: fixed;
+    left: 35px; /* Position slightly to the right of the progress bar */
+    top: 50%; 
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* Spacing between dots */
+    z-index: 100;
+    max-height: 250px; /* Limit height if too many dots */
+    overflow: hidden; /* Hide excess dots if needed */
+}
+
+.day-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--color-gray-200); /* Default/empty state */
+    opacity: 0.3; /* Make default very faint */
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    cursor: help; /* Indicate tooltip */
+}
+
+/* We can add more specific styles based on data attributes later */ 

@@ -5,7 +5,8 @@
 __pycache__/
 *.pyc
 *.pyo
-
+Geist-v1.4.01
+node_modules/
 # OS generated files
 .DS_Store
 Thumbs.db

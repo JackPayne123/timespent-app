@@ -7,22 +7,36 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- NEW: Daily Dots Tracker -->
+    <div id="daily-dots-tracker" class="daily-dots-tracker">
+        <!-- Dots will be rendered here by JS -->
+    </div>
+
+    <!-- NEW: Vertical Progress Bar -->
+    <div id="vertical-progress-container" class="vertical-progress-container hidden">
+        <div class="vertical-progress-track">
+            <div id="vertical-progress-fill" class="vertical-progress-fill"></div>
+        </div>
+        <div id="vertical-progress-text" class="vertical-progress-text">0%</div>
+    </div>
+
     <div class="top-right-controls">
         <div class="app-version">v{{ git_version }}</div>
         <div class="daily-goal-setting">
             <label for="daily-goal-input">Goal (min):</label>
             <input type="number" id="daily-goal-input" min="15" max="720" step="15" value="120">
         </div>
-        <button id="clear-history-btn" class="danger small">Clear History</button> 
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" title="Adjust Volume">
+        <button id="clear-history-btn" class="danger small">Clear History</button>
     </div>
     <div class="app-container">
-        <header>
+      <!--  <header>
             <h1>TimeSpent</h1>
             <p class="tagline">Track your time, improve your productivity</p>
-        </header>
+        </header> -->
 
         <div class="main-section">
             <!-- Countdown Section -->
@@ -30,14 +44,6 @@
                 <div class="timer-display-area">
                     <div class="timer-display">
                         <h2 id="time-display">25:00</h2>
-                    </div>
-                    <div class="volume-controls">
-                        <button id="volume-settings-btn" class="icon-btn" title="Volume Settings">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
-                                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858"/>
-                              </svg>
-                        </button>
-                        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" class="hidden" title="Adjust Volume">
                     </div>
                 </div>
 
@@ -67,17 +73,6 @@
                     <button id="pause-timer-btn" class="secondary hidden">Pause</button>
                     <button id="task-completed-btn" class="success hidden">Task Completed</button>
                     <button id="reset-timer-btn" class="secondary">Reset</button>
-                </div>
-
-                <!-- NEW: Progress Bar Area -->
-                <div id="daily-progress-container" class="progress-bar-container hidden">
-                    <div class="progress-text">
-                        <span id="progress-label-left">Focused: 0 / 120 min</span>
-                        <span id="progress-label-right">0%</span>
-                    </div>
-                    <div class="progress-track">
-                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
-                    </div>
                 </div>
             </div>
 

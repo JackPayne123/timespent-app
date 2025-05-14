@@ -51,7 +51,7 @@ def serve_root_file(filename):
         return send_from_directory(app.root_path, filename, mimetype='audio/wav')
     else:
         # Optionally handle other root files or return 404
-        return "File not found", 404 
+        return "File not found", 404
 
 # API Endpoint to get all history entries from Supabase
 @app.route('/api/history', methods=['GET'])

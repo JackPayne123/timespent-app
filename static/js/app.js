@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         currentSessionDescription: '', 
         currentSessionTags: [], 
+        lastSessionDescription: '', // NEW: To store the last completed session's description
+        lastSessionTags: [],      // NEW: To store the last completed session's tags
         history: [],
         activeFilterTag: null,
         volume: 0.5,
@@ -56,13 +58,14 @@ document.addEventListener('DOMContentLoaded', function() {
         presetTagsContainer: document.getElementById('preset-tags-container'), // For preset tag buttons
         dayTrackingViewContainer: document.getElementById('day-tracking-view'), // For daily summary view
         includeBreaksToggle: document.getElementById('include-breaks-toggle'), // NEW: Checkbox element
-        // New progress bar elements
-        dailyProgressContainer: document.getElementById('daily-progress-container'),
-        progressLabelLeft: document.getElementById('progress-label-left'),
-        progressLabelRight: document.getElementById('progress-label-right'),
-        progressFill: document.getElementById('progress-fill'),
+        // NEW: Vertical progress bar elements
+        verticalProgressContainer: document.getElementById('vertical-progress-container'),
+        verticalProgressFill: document.getElementById('vertical-progress-fill'),
+        verticalProgressText: document.getElementById('vertical-progress-text'),
         // New goal input element
-        dailyGoalInput: document.getElementById('daily-goal-input')
+        dailyGoalInput: document.getElementById('daily-goal-input'),
+        // NEW: Daily dots tracker element
+        dailyDotsTracker: document.getElementById('daily-dots-tracker')
     };
 
     // --- Worker Message Handling ---
@@ -76,9 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     state.currentDisplayMinutes = minutes;
                     state.currentDisplaySeconds = seconds;
                     updateCountdownDisplay(); // Update UI with received time
-                    // Add pulse animation briefly
-                    elements.timeDisplay.classList.add('pulsing');
-                    setTimeout(() => elements.timeDisplay.classList.remove('pulsing'), 300); // Match CSS animation duration
                     break;
                 case 'playSound':
                     playSound();
@@ -167,8 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         updateButtonStates();
         updateDailyProgress(); // Initial update
-        // Keep slider hidden initially
-        elements.volumeSlider.classList.add('hidden');
+        renderDailyDotsTracker(); // Initial render
     }
 
     // Setup Event Listeners
@@ -199,9 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Volume Control Listeners
-        elements.volumeSettingsButton.addEventListener('click', () => {
-            elements.volumeSlider.classList.toggle('hidden');
-        });
         elements.volumeSlider.addEventListener('input', handleVolumeChange);
 
         // NEW: Listener for the break toggle checkbox
@@ -209,20 +205,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // NEW: Listener for daily goal input
         elements.dailyGoalInput.addEventListener('input', handleGoalInputChange);
+
+        // Add keyboard shortcut for starting timer (Cmd+Enter or Shift+Enter)
+        elements.sessionDescriptionInput.addEventListener('keydown', (event) => {
+            // Check if Enter is pressed and either Cmd (metaKey on Mac) or Shift is held
+            if (event.key === 'Enter' && (event.metaKey || event.shiftKey)) {
+                event.preventDefault(); // Prevent default action (e.g., newline)
+                // Only start if timer is not already active or paused
+                if (!state.isTimerActive && !state.isTimerPaused) {
+                    startCountdown();
+                }
+            }
+        });
     }
 
     // Update Button Visibility and Text based on State
     function updateButtonStates() {
         const isRunningOrPaused = state.isTimerActive;
+        const canRestartWithPreviousSession = !isRunningOrPaused && state.lastSessionDescription;
 
         // Timer Controls
-        elements.startButton.classList.toggle('hidden', isRunningOrPaused);
+        elements.startButton.classList.toggle('hidden', isRunningOrPaused); // Start button visible if not running/paused
         elements.pauseButton.classList.toggle('hidden', !isRunningOrPaused);
         elements.taskCompletedButton.classList.toggle('hidden', !isRunningOrPaused);
         elements.resetButton.classList.remove('hidden'); // Reset is always visible
 
         // Add Time Controls Container Visibility
-        elements.addTimeControls.classList.toggle('hidden', !isRunningOrPaused);
+        // Show if timer is running/paused OR if not running but last session details are available
+        elements.addTimeControls.classList.toggle('hidden', !(isRunningOrPaused || canRestartWithPreviousSession));
 
         if (state.isTimerPaused) {
             elements.pauseButton.textContent = 'Resume';
@@ -322,6 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         saveCurrentSessionToHistory(elapsedDuration);
 
+        // Preserve the completed session's details
+        state.lastSessionDescription = state.currentSessionDescription;
+        state.lastSessionTags = state.currentSessionTags;
+
         // Reset UI immediately (worker will also send 'stopped')
         const resetTime = new Date(); // Capture time *before* resetting state
         state.isTimerActive = false;
@@ -332,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
         state.currentDisplaySeconds = state.initialDurationSet % 60;
         updateCountdownDisplay();
-        // Clear session data
+        // Clear session data for the next distinct session
         state.currentSessionDescription = '';
         state.currentSessionTags = [];
         elements.sessionDescriptionInput.value = '';
@@ -352,9 +366,9 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.presetButtons.forEach(btn => btn.disabled = false);
         updateCountdownDisplay();
         document.title = 'TimeSpent - Simple Countdown';
-        if (showAlert) {
-            alert('Countdown reset.');
-        }
+        // if (showAlert) {
+        //    alert('Countdown reset.');
+        // }
     }
 
     // Reset button calls internalReset
@@ -504,6 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderDayTrackingView(historyForMetrics); // Pass historyForMetrics to day tracking
             renderPresetTags(); 
             updateDailyProgress(); // Update progress even if list is empty
+            renderDailyDotsTracker(); // NEW: Update dots after history render
             return; 
         }
 
@@ -608,6 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Let's keep preset tags based on full history for now
         renderPresetTags();
         updateDailyProgress(); // Update progress after history render
+        renderDailyDotsTracker(); // NEW: Update dots after history render
     }
 
     function renderFilterTags() {
@@ -730,7 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // NEW: Render Day Tracking View
-    function renderDayTrackingView(historyData) { // Accepts history data (potentially pre-filtered for breaks)
+    function renderDayTrackingView(historyData) {
         if (!elements.dayTrackingViewContainer) return;
 
         const dailyTotals = {}; // { 'YYYY-MM-DD': totalMinutes }
@@ -926,10 +942,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // NEW function to add time to the countdown
     function addTime(minutesToAdd) {
-        if (!state.isTimerActive) return; // Can only add if active/paused
-        // Send addTime command to worker
-        sendWorkerCommand('addTime', { minutesToAdd });
-        // Actual time update comes from worker 'tick' message
+        if (state.isTimerActive) { // Timer is currently running or paused
+            // Send addTime command to worker to extend the current session
+            sendWorkerCommand('addTime', { minutesToAdd });
+            // Worker will send back 'tick' and 'timeAdded' messages.
+            // UI updates for time display will occur via worker's 'tick'.
+        } else { // Timer is not active (e.g., it has completed, or it's a fresh start)
+            if (state.lastSessionDescription) {
+                // A previous session was completed, so reuse its description and tags.
+                elements.sessionDescriptionInput.value = state.lastSessionDescription;
+                // Note: startCountdown will read from sessionDescriptionInput to set
+                // state.currentSessionDescription and state.currentSessionTags.
+
+                // Set the duration for the new timer.
+                setCountdownLength(minutesToAdd); // This sets initialDurationSet, displayMinutes, displaySeconds
+                elements.customTimeInput.value = minutesToAdd; // Reflect this in the custom time input.
+                
+                // Deactivate any active preset buttons, as this is a custom start.
+                elements.presetButtons.forEach(b => b.classList.remove('active'));
+
+                // Start a new countdown.
+                startCountdown(); 
+            } else {
+                // No last session description available (e.g., app just loaded, or reset before any completion).
+                // This case should ideally not be hit if buttons are visible only when lastSessionDescription exists.
+                alert('Please enter a description for the session first, or complete a session to reuse its description.');
+                elements.sessionDescriptionInput.focus();
+            }
+        }
     }
 
     // NEW: Handle Volume Change
@@ -978,7 +1018,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // NEW: Function to update daily progress bar
     function updateDailyProgress() {
-        if (!elements.dailyProgressContainer) return; // Exit if element doesn't exist
+        // Target the new vertical progress bar elements
+        if (!elements.verticalProgressContainer || !elements.verticalProgressFill || !elements.verticalProgressText) {
+            return;
+        }
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1012,16 +1055,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const goalMinutes = state.dailyGoalMinutes > 0 ? state.dailyGoalMinutes : 1; // Avoid division by zero
         const percentage = Math.min(100, Math.max(0, (totalFocusedMinutesToday / goalMinutes) * 100));
 
-        // Update UI Elements
-        elements.progressLabelLeft.textContent = `Focused: ${totalFocusedMinutesToday} / ${state.dailyGoalMinutes} min`;
-        elements.progressLabelRight.textContent = `${Math.round(percentage)}%`;
-        elements.progressFill.style.width = `${percentage}%`;
+        // Update UI Elements for the vertical bar
+        elements.verticalProgressFill.style.height = `${percentage}%`;
+        elements.verticalProgressText.textContent = `${Math.round(percentage)}%`; // Show percentage below bar
 
         // Show/hide the container based on whether there's history or a goal set
-        if (state.history.length > 0 || state.dailyGoalMinutes > 0) {
-             elements.dailyProgressContainer.classList.remove('hidden');
+        const shouldShow = state.history.length > 0 || state.dailyGoalMinutes > 0;
+        if (shouldShow) {
+             elements.verticalProgressContainer.classList.remove('hidden');
         } else {
-             elements.dailyProgressContainer.classList.add('hidden');
+             elements.verticalProgressContainer.classList.add('hidden');
         }
     }
 
@@ -1056,6 +1099,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const completedDuration = Math.floor(state.initialDurationSet / 60);
         saveCurrentSessionToHistory(completedDuration); // Save with full duration
 
+        // Preserve the completed session's details
+        state.lastSessionDescription = state.currentSessionDescription;
+        state.lastSessionTags = state.currentSessionTags;
+
         // Worker should have already stopped interval
         state.isTimerActive = false;
         state.isTimerPaused = false;
@@ -1066,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state.currentDisplayMinutes = Math.floor(state.initialDurationSet / 60);
         state.currentDisplaySeconds = state.initialDurationSet % 60;
         updateCountdownDisplay(); // Show initial time again
-        // Clear session data
+        // Clear session data for the next distinct session
         state.currentSessionDescription = '';
         state.currentSessionTags = [];
         elements.sessionDescriptionInput.value = '';
@@ -1179,6 +1226,71 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error(`Error deleting history entry ID ${entryId}:`, error);
             alert(`Failed to delete entry: ${error.message}`);
         });
+    }
+
+    // NEW: Function to render daily activity dots
+    function renderDailyDotsTracker() {
+        if (!elements.dailyDotsTracker) return;
+
+        const numDays = 30; // Show last 30 days
+        const dailyTotals = {}; // { 'YYYY-MM-DD': totalMinutes }
+
+        // 1. Calculate daily totals from history (respecting break filter)
+        const historyForDots = state.includeBreaksInMetrics
+            ? state.history
+            : state.history.filter(entry => !(entry.tags && entry.tags.includes('break')));
+
+        historyForDots.forEach(entry => {
+            if (!entry.start_time || !entry.duration) return;
+            const startDate = new Date(entry.start_time);
+            if (isNaN(startDate.getTime())) return;
+
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const day = String(startDate.getDate()).padStart(2, '0');
+            const dayKey = `${year}-${month}-${day}`;
+
+            dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + entry.duration;
+        });
+
+        // 2. Generate dots for the last numDays
+        elements.dailyDotsTracker.innerHTML = ''; // Clear previous dots
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today to start of day
+
+        for (let i = 0; i < numDays; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const dayOfMonth = String(date.getDate()).padStart(2, '0');
+            const dayKey = `${year}-${month}-${dayOfMonth}`;
+
+            const totalMinutes = dailyTotals[dayKey] || 0;
+            const goalMinutes = state.dailyGoalMinutes > 0 ? state.dailyGoalMinutes : 1; // Avoid division by zero
+            const percentage = Math.min(100, (totalMinutes / goalMinutes) * 100);
+
+            const dot = document.createElement('div');
+            dot.classList.add('day-dot');
+            dot.title = `${dayKey}: ${totalMinutes} min (${Math.round(percentage)}% goal)`;
+
+            // Style the dot based on percentage
+            // Using opacity: 0.3 (faint gray) for 0%, up to 1.0 (primary color) for 100%+
+            if (totalMinutes > 0) {
+                dot.style.backgroundColor = 'var(--primary-color)';
+                // Scale opacity from 0.3 (for >0 min) to 1.0 (for 100%+)
+                // Let's map 1%->0.3, 100%->1.0. Linear interpolation.
+                // opacity = 0.3 + (percentage / 100) * 0.7
+                const opacity = 0.3 + Math.min(1, percentage / 100) * 0.7;
+                dot.style.opacity = opacity;
+            } else {
+                 // Keep default faint gray defined in CSS
+            }
+
+
+            elements.dailyDotsTracker.insertBefore(dot, elements.dailyDotsTracker.firstChild); // Insert at the beginning so today is at the bottom
+        }
     }
 
     // Initialize the app
